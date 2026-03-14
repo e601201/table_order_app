@@ -60,3 +60,7 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "inertia_rails", "~> 3.18"
+
+gem "vite_rails", "~> 3.0"
