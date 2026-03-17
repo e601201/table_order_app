@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "skills": {
+    "inertia-rails-auth": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "dd5d3d4773ffce3cf142c8107b17933e332458b4294c739ce9e944da64b0b12b"
+    },
+    "inertia-rails-best-practices": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "183f9ad0881b716cdbdfa8705d8644a9d249f32777dcfd11b3b896537a21d7ae"
+    },
+    "inertia-rails-cookbook": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "423dceb54477710d80dbac14b711daf636e4c434de44afe82933060afcc6fda5"
+    },
+    "inertia-rails-forms": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "37d83185a34e0c05b6ebb7d9924ff92dc25454e1546c6ff4c167fce524113bb5"
+    },
+    "inertia-rails-performance": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "fc571db329e72fdbc2a7045bb8fef51ea008599be888add2cd27a316137ed5b6"
+    },
+    "inertia-rails-setup": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "41cdca09d56a0b9d969cb51e9258510d9890c1d8b301294b54586d4e0c05319f"
+    },
+    "inertia-rails-ssr": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "47140465a9383e34b6c835798ab1435680cdac958fdf1317908ec13a84b3ce32"
+    },
+    "inertia-rails-testing": {
+      "source": "cole-robertson/inertia-rails-skills",
+      "sourceType": "github",
+      "computedHash": "263cac717019061c32a9065c0c86991c931552344109cd6010563d9c8c4161cd"
+    }
+  }
+}
