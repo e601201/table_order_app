@@ -89,7 +89,8 @@ production:
     <<: *default
     database: table_order_app_production
     username: table_order_app
-    password: <%= ENV["TABLE_ORDER_APP_DATABASE_PASSWORD"] %>
+    password: <%= ENV["POSTGRES_PASSWORD"] %>
+    host: <%= ENV.fetch("DB_HOST", "table_order_app-db") %>
   cache:
     <<: *primary_production
     database: table_order_app_production_cache
