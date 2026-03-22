@@ -16,6 +16,7 @@ Rails.application.routes.draw do
 
   # for POC: Order pages
   get "order", to: "orders#home"
+  get "order/item/:id", to: "orders#item_detail"
 
   # Defines the root path route ("/")
   root "welcome#index"

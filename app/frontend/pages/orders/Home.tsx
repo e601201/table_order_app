@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react'
+import { Head, Link } from '@inertiajs/react'
 import { useState } from 'react'
 import { ShoppingCart, Plus, Flame, Star } from 'lucide-react'
 
@@ -96,7 +96,7 @@ export default function OrderHome({ table_number = 5, restaurant_name = 'Burger 
             </div>
             <div className="flex gap-3 px-4 overflow-x-auto scrollbar-hide">
               {recommendedItems.map((item) => (
-                <div key={item.id} className="flex-shrink-0 w-[155px] rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
+                <Link key={item.id} href={`/order/item/${item.id}`} className="shrink-0 w-[155px] rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
                   <div className="relative h-[120px] rounded-t-xl overflow-hidden">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     {item.recommended && (
@@ -111,14 +111,14 @@ export default function OrderHome({ table_number = 5, restaurant_name = 'Burger 
                     <div className="flex items-center justify-between">
                       <span className="text-base font-bold text-[#E53935] tracking-tight">¥{item.price}</span>
                       <button
-                        onClick={addToCart}
+                        onClick={(e) => { e.preventDefault(); addToCart() }}
                         className="flex items-center justify-center w-8 h-8 rounded-full bg-[#E53935] hover:bg-[#C62828] transition-colors"
                       >
                         <Plus className="w-[18px] h-[18px] text-white" />
                       </button>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>
@@ -131,7 +131,7 @@ export default function OrderHome({ table_number = 5, restaurant_name = 'Burger 
             </div>
             <div className="grid grid-cols-2 gap-3">
               {menuItems.map((item) => (
-                <div key={item.id} className="rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
+                <Link key={item.id} href={`/order/item/${item.id}`} className="rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
                   <div className="h-[120px] rounded-t-xl overflow-hidden">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   </div>
@@ -140,14 +140,14 @@ export default function OrderHome({ table_number = 5, restaurant_name = 'Burger 
                     <div className="flex items-center justify-between">
                       <span className="text-base font-bold text-[#E53935] tracking-tight">¥{item.price}</span>
                       <button
-                        onClick={addToCart}
+                        onClick={(e) => { e.preventDefault(); addToCart() }}
                         className="flex items-center justify-center w-8 h-8 rounded-full bg-[#E53935] hover:bg-[#C62828] transition-colors"
                       >
                         <Plus className="w-[18px] h-[18px] text-white" />
                       </button>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>

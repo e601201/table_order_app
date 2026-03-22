@@ -5,4 +5,8 @@ class OrdersController < ApplicationController
       restaurant_name: "Burger House"
     }
   end
+
+  def item_detail
+    render inertia: "orders/ItemDetail"
+  end
 end
