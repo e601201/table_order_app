@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react'
+import { Head, Link } from '@inertiajs/react'
 import { useState } from 'react'
 import { X, Flame, Minus, Plus, ShoppingCart } from 'lucide-react'
 
@@ -23,7 +23,6 @@ interface ItemDetailProps {
     calories: number
     image: string
   }
-  onClose?: () => void
   onAddToCart?: (item: { size: string; addons: string[]; quantity: number; total: number }) => void
 }
 
@@ -49,7 +48,7 @@ const addonOptions: AddonOption[] = [
   { id: 'egg', label: 'Egg', price: 80 },
 ]
 
-export default function ItemDetail({ item = defaultItem, onClose, onAddToCart }: ItemDetailProps) {
+export default function ItemDetail({ item = defaultItem, onAddToCart }: ItemDetailProps) {
   const [selectedSize, setSelectedSize] = useState('regular')
   const [selectedAddons, setSelectedAddons] = useState<string[]>([])
   const [quantity, setQuantity] = useState(1)
@@ -81,12 +80,12 @@ export default function ItemDetail({ item = defaultItem, onClose, onAddToCart }:
           {/* Item Image */}
           <div className="relative h-[260px] bg-[#F0E0D0]">
             <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-            <button
-              onClick={onClose}
+            <Link
+              href="/order"
               className="absolute top-4 left-4 flex items-center justify-center w-9 h-9 rounded-full bg-white shadow-[0_2px_8px_rgba(26,18,16,0.09)]"
             >
               <X className="w-5 h-5 text-[#1A1210]" />
-            </button>
+            </Link>
           </div>
 
           {/* Item Info */}
