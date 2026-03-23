@@ -9,4 +9,10 @@ class OrdersController < ApplicationController
   def item_detail
     render inertia: "orders/ItemDetail"
   end
+
+  def cart_review
+    render inertia: "orders/CartReview", props: {
+      table_number: params[:table_number]&.to_i || 5
+    }
+  end
 end
