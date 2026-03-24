@@ -15,4 +15,10 @@ class OrdersController < ApplicationController
       table_number: params[:table_number]&.to_i || 5
     }
   end
+
+  def order_complete
+    render inertia: "orders/OrderComplete", props: {
+      order_number: params[:order_number] || "#A-0247"
+    }
+  end
 end

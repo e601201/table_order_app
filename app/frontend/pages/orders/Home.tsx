@@ -33,11 +33,11 @@ const menuItems: MenuItem[] = [
 ]
 
 interface OrderHomeProps {
-  table_number?: number
-  restaurant_name?: string
+  table_number: number
+  restaurant_name: string
 }
 
-export default function OrderHome({ table_number = 5, restaurant_name = 'Burger House' }: OrderHomeProps) {
+export default function OrderHome({ table_number, restaurant_name }: OrderHomeProps) {
   const [activeCategory, setActiveCategory] = useState('burgers')
   const [cartCount, setCartCount] = useState(3)
 

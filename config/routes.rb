@@ -18,6 +18,7 @@ Rails.application.routes.draw do
   get "order", to: "orders#home"
   get "order/item/:id", to: "orders#item_detail"
   get "order/cart", to: "orders#cart_review"
+  get "order/complete", to: "orders#order_complete"
 
   # Defines the root path route ("/")
   root "welcome#index"
