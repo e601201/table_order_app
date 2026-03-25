@@ -115,7 +115,7 @@ export default function CartReview({ table_number = 5 }: CartReviewProps) {
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="w-[72px] h-[72px] rounded-xl object-cover flex-shrink-0"
+                  className="w-[72px] h-[72px] rounded-xl object-cover shrink-0"
                 />
 
                 {/* Item Info */}
@@ -127,7 +127,7 @@ export default function CartReview({ table_number = 5 }: CartReviewProps) {
                     </span>
                     <button
                       onClick={() => removeItem(item.id)}
-                      className="flex items-center justify-center w-7 h-7 rounded-full bg-[#FFEBEE] flex-shrink-0"
+                      className="flex items-center justify-center w-7 h-7 rounded-full bg-[#FFEBEE] shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5 text-[#E53935]" />
                     </button>
