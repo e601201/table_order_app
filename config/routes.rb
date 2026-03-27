@@ -17,6 +17,9 @@ Rails.application.routes.draw do
   # for POC: Kitchen dashboard
   get "kitchen", to: "kitchen#dashboard"
 
+  # for POC: Cashier dashboard
+  get "cashier", to: "cashier#dashboard"
+
   # for POC: Order pages
   get "order", to: "orders#home"
   get "order/item/:id", to: "orders#item_detail"
