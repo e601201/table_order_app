@@ -20,6 +20,7 @@ Rails.application.routes.draw do
   # for POC: Cashier dashboard
   get "cashier", to: "cashier#dashboard"
   get "cashier/payment", to: "cashier#payment_confirm"
+  get "cashier/payment/complete", to: "cashier#payment_complete"
 
   # for POC: Order pages
   get "order", to: "orders#home"

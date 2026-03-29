@@ -6,4 +6,8 @@ class CashierController < ApplicationController
   def payment_confirm
     render inertia: "cashier/PaymentConfirm"
   end
+
+  def payment_complete
+    render inertia: "cashier/PaymentComplete"
+  end
 end
