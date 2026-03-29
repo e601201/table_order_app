@@ -8,7 +8,7 @@ Table ordering app (POC) for restaurants — mobile-first interface for tabletop
 
 ## 技術スタック
 
-- **Backend**: Rails 8.1.2 / Ruby 4.0.1 / PostgreSQL
+- **Backend**: Rails 8.1.3 / Ruby 4.0.1 / PostgreSQL
 - **Frontend**: React 19 + TypeScript + Inertia.js (server-driven SPA)
 - **Styling**: Tailwind CSS 4.2.2 via Vite plugin
 - **Build**: Vite 8.0 with vite-plugin-ruby
