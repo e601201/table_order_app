@@ -40,16 +40,28 @@ Controller (render inertia: 'PageName', props: {...})
 
 ### 主要ディレクトリ
 - `app/controllers/` — Inertiaページを描画するRailsコントローラー
+  - `orders_controller.rb` — 注文系ページ（メニュー、商品詳細、カート、注文完了）
+  - `kitchen_controller.rb` — キッチン向けダッシュボード
+  - `cashier_controller.rb` — レジ向け画面（ダッシュボード、決済確認、決済完了）
 - `app/frontend/pages/` — Reactページコンポーネント（Inertia renderと1対1で対応）
+  - `orders/` — Home, ItemDetail, CartReview, OrderComplete
+  - `kitchen/` — Dashboard
+  - `cashier/` — Dashboard, PaymentConfirm, PaymentComplete
 - `app/frontend/entrypoints/` — Viteエントリーポイント（`inertia.tsx`がReactを起動）
-- `app/frontend/types/` — 共有TypeScript型定義
+- `app/frontend/types/` — 共有TypeScript型定義（FlashData, SharedProps）
 - `config/initializers/inertia_rails.rb` — Inertia設定
 
 ### ルーティング
 ```
-GET /               → welcome#index      (ウェルカムページ)
-GET /order          → orders#home        (メニュー一覧)
-GET /order/item/:id → orders#item_detail (商品詳細)
+GET /                        → welcome#index             (ウェルカムページ)
+GET /order                   → orders#home               (メニュー一覧)
+GET /order/item/:id          → orders#item_detail        (商品詳細)
+GET /order/cart               → orders#cart_review        (カート確認)
+GET /order/complete           → orders#order_complete     (注文完了)
+GET /kitchen                  → kitchen#dashboard         (キッチンダッシュボード)
+GET /cashier                  → cashier#dashboard         (レジダッシュボード)
+GET /cashier/payment          → cashier#payment_confirm   (決済確認)
+GET /cashier/payment/complete → cashier#payment_complete  (決済完了)
 ```
 
 ### TypeScriptパスエイリアス
@@ -60,6 +72,11 @@ GET /order/item/:id → orders#item_detail (商品詳細)
 - Custom "Outfit" font (Google Fonts)
 - Warm color scheme: primary red `#E53935`, accent orange `#FB8C00`, background `#FFF8F0`
 - Modern browsers only (WebP, CSS nesting required)
+
+### 画面構成（3つのロール）
+- **客席タブレット（/order）** — お客様がメニュー閲覧・注文するモバイル画面
+- **キッチン（/kitchen）** — 調理スタッフが注文を確認するダッシュボード
+- **レジ（/cashier）** — 会計スタッフが決済処理を行う画面
 
 ### データベース
 PostgreSQL. No migrations or models defined yet — currently using mock data in frontend components.
