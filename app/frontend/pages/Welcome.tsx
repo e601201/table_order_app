@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react'
+import { Head, Link} from '@inertiajs/react'
 
 interface WelcomeProps {
   app_name: string
@@ -13,9 +13,9 @@ export default function Welcome({ app_name }: WelcomeProps) {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             ようこそ
           </h1>
-          <p className="text-lg text-gray-600 mb-8">
+          <Link href="/order" className="text-lg text-blue-500">
             {app_name}
-          </p>
+          </Link>
         </div>
       </div>
     </>
