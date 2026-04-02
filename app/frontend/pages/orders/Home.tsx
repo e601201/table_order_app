@@ -151,16 +151,15 @@ export default function OrderHome({ table_number, restaurant_name }: OrderHomePr
               ))}
             </div>
           </section>
+          {/* Floating Cart Button */}
+          <Link href="/order/cart" className="fixed bottom-6 right-6 z-30 flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.5),0_2px_4px_rgba(229,57,53,0.25)] hover:bg-[#C62828] transition-colors">
+            <ShoppingCart className="w-5 h-5 text-white" />
+            <span className="text-[15px] font-semibold text-white">Cart</span>
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#FFB300] text-xs font-bold text-[#1A1210]">
+              {cartCount}
+            </span>
+          </Link>
         </div>
-
-        {/* Floating Cart Button */}
-        <Link href="/order/cart" className="fixed bottom-6 right-6 z-30 flex items-center gap-2.5 px-5 py-3 rounded-full bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.5),0_2px_4px_rgba(229,57,53,0.25)] hover:bg-[#C62828] transition-colors">
-          <ShoppingCart className="w-5 h-5 text-white" />
-          <span className="text-[15px] font-semibold text-white">Cart</span>
-          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#FFB300] text-xs font-bold text-[#1A1210]">
-            {cartCount}
-          </span>
-        </Link>
       </div>
     </>
   )
