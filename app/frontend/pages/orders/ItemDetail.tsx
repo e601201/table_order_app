@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react'
 import { useState } from 'react'
 import { X, Flame, Minus, Plus, ShoppingCart } from 'lucide-react'
+import { router } from '@inertiajs/react'
 
 interface SizeOption {
   id: string
@@ -66,6 +67,7 @@ export default function ItemDetail({ item = defaultItem, onAddToCart }: ItemDeta
 
   const handleAddToCart = () => {
     onAddToCart?.({ size: selectedSize, addons: selectedAddons, quantity, total: totalPrice })
+    router.visit('/order')
   }
 
   return (
