@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, Check } from 'lucide-react'
 
@@ -47,6 +47,7 @@ const TAX_RATE = 0.1
 export default function CartReview({ table_number = 5 }: CartReviewProps) {
   const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems)
   const [specialInstructions, setSpecialInstructions] = useState('No onions on the burger, please.')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const updateQuantity = (id: number, delta: number) => {
     setCartItems((items) =>
@@ -235,6 +236,7 @@ export default function CartReview({ table_number = 5 }: CartReviewProps) {
           </div>
           <button
             disabled={cartItems.length === 0}
+            onClick={() => setShowConfirmModal(true)}
             className="flex items-center justify-center gap-2.5 h-[52px] rounded-2xl bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.38),0_2px_4px_rgba(229,57,53,0.19)] hover:bg-[#C62828] disabled:opacity-50 disabled:hover:bg-[#E53935] transition-colors"
           >
             <Check className="w-5 h-5 text-white" />
@@ -245,6 +247,44 @@ export default function CartReview({ table_number = 5 }: CartReviewProps) {
           </p>
         </div>
       </div>
+
+        {/* 確認モーダル */}
+        {showConfirmModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowConfirmModal(false)}
+          >
+            <div
+              className="flex flex-col gap-4 w-[320px] rounded-2xl bg-white p-6 shadow-xl"
+              style={{ fontFamily: 'Outfit, sans-serif' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#FFF3E0]">
+                  <ShoppingBag className="w-6 h-6 text-[#FB8C00]" />
+                </div>
+                <h2 className="text-lg font-bold text-[#1A1210]">Confirm Your Order</h2>
+                <p className="text-sm text-[#6D5D4B]">
+                  {totalItems} items · ¥{total.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="flex-1 h-11 rounded-xl bg-[#FFF3E0] border border-[#F0E0D0] text-sm font-semibold text-[#1A1210]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => router.visit('/order/complete')}
+                  className="flex-1 h-11 rounded-xl bg-[#E53935] text-sm font-bold text-white shadow-[0_4px_12px_rgba(229,57,53,0.3)] hover:bg-[#C62828] transition-colors"
+                >
+                  Place Order
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </>
   )
 }
