@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react'
+import { Head, Link } from '@inertiajs/react'
 import { useState, useMemo } from 'react'
 import { Search, RefreshCw, CreditCard, X, ChefHat } from 'lucide-react'
 
@@ -182,11 +182,9 @@ function OrderTable({
 
 function OrderSummary({
   order,
-  onProceedPayment,
   onCancel,
 }: {
   order: Order | null
-  onProceedPayment: () => void
   onCancel: () => void
 }) {
   if (!order) {
@@ -295,8 +293,8 @@ function OrderSummary({
 
       {/* アクションボタン */}
       <div className="px-5 pb-5 flex flex-col gap-2">
-        <button
-          onClick={onProceedPayment}
+        <Link
+          href="/cashier/payment"
           className="flex items-center justify-center gap-2 w-full rounded-lg"
           style={{
             height: 48,
@@ -309,7 +307,7 @@ function OrderSummary({
         >
           <CreditCard size={18} />
           Proceed to Payment — ¥{total.toLocaleString()}
-        </button>
+        </Link>
         <button
           onClick={onCancel}
           className="flex items-center justify-center w-full rounded-lg"
@@ -460,11 +458,6 @@ export default function CashierDashboard() {
           >
             <OrderSummary
               order={selectedOrder}
-              onProceedPayment={() => {
-                if (selectedOrder) {
-                  alert(`Processing payment for ${selectedOrder.orderNumber}: ¥${(selectedOrder.items.reduce((s, i) => s + i.price, 0) * 1.1).toLocaleString()}`)
-                }
-              }}
               onCancel={() => setSelectedOrderId(null)}
             />
           </aside>

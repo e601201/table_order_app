@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react'
 import { useState } from 'react'
-import { ChefHat, ArrowLeft, CheckCircle, Banknote, CreditCard } from 'lucide-react'
+import { ChefHat, ArrowLeft, CheckCircle, Banknote, CreditCard, X } from 'lucide-react'
 
 // --- 型定義 ---
 
@@ -96,6 +96,7 @@ function PaymentMethodButton({
 
 export default function PaymentConfirm() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   const order = mockOrder
   const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -269,7 +270,7 @@ export default function PaymentConfirm() {
                   fontSize: 15,
                   fontWeight: 700,
                 }}
-                onClick={() => alert(`Payment confirmed: $${total.toFixed(2)}`)}
+                onClick={() => setShowConfirmModal(true)}
               >
                 <CheckCircle size={18} />
                 Confirm Payment · ${total.toFixed(2)}
@@ -278,6 +279,100 @@ export default function PaymentConfirm() {
           </aside>
         </div>
       </div>
+
+      {/* 確認モーダル */}
+      {showConfirmModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+          onClick={() => setShowConfirmModal(false)}
+        >
+          <div
+            className="relative rounded-xl p-6 w-[400px] flex flex-col gap-5"
+            style={{ backgroundColor: '#ffffff' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 flex items-center justify-center"
+              style={{ color: '#a3a3a3' }}
+              onClick={() => setShowConfirmModal(false)}
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <div
+                className="flex items-center justify-center w-12 h-12 rounded-full"
+                style={{ backgroundColor: '#f0fdf4' }}
+              >
+                <CheckCircle size={24} color="#16a34a" />
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
+                Confirm Payment
+              </h3>
+              <p style={{ fontSize: 14, fontWeight: 400, color: '#737373', textAlign: 'center' }}>
+                Are you sure you want to process this payment?
+              </p>
+            </div>
+
+            <div
+              className="rounded-lg p-4 flex flex-col gap-2"
+              style={{ backgroundColor: '#fafafa', border: '1px solid #e5e5e5' }}
+            >
+              <div className="flex items-center justify-between">
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Order</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>{order.orderNumber}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Method</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>
+                  {paymentMethod === 'cash' ? 'Cash' : 'Credit Card'}
+                </span>
+              </div>
+              <div
+                className="flex items-center justify-between pt-2"
+                style={{ borderTop: '1px solid #e5e5e5' }}
+              >
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
+                  ${total.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="flex-1 rounded-lg"
+                style={{
+                  height: 46,
+                  backgroundColor: '#ffffff',
+                  color: '#525252',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  border: '1px solid #e5e5e5',
+                }}
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <Link
+                href="/cashier/payment/complete"
+                className="flex-1 flex items-center justify-center gap-2 rounded-lg"
+                style={{
+                  height: 46,
+                  backgroundColor: '#171717',
+                  color: '#fafafa',
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                <CheckCircle size={16} />
+                Confirm
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
