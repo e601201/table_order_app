@@ -92,8 +92,10 @@ builder:
   #   - RAILS_MASTER_KEY
 
 # Use a different ssh user than root
-# ssh:
-#   user: app
+ssh:
+  user: root
+  keys:
+    - ~/.ssh/sakura_vps/sakura_vps
 
 accessories:
   db:
