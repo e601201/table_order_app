@@ -194,7 +194,10 @@ export default function ItemDetail({ item }: ItemDetailProps) {
 
           {/* Quantity */}
           <div className="flex items-center justify-between px-5 py-4">
-            <span className="text-base font-semibold text-[#1A1210]">Quantity</span>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-semibold text-[#1A1210]">Quantity</span>
+              <span className="text-xs font-medium text-[#9E8E7E]">Max: {item.max_quantity}</span>
+            </div>
             <div className="flex items-center rounded-xl border-[1.5px] border-[#F0E0D0] bg-white overflow-hidden">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -206,8 +209,9 @@ export default function ItemDetail({ item }: ItemDetailProps) {
                 <span className="text-lg font-bold text-[#1A1210]">{quantity}</span>
               </div>
               <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="flex items-center justify-center w-11 h-10"
+                onClick={() => setQuantity((q) => Math.min(item.max_quantity, q + 1))}
+                disabled={quantity >= item.max_quantity}
+                className="flex items-center justify-center w-11 h-10 disabled:opacity-40"
               >
                 <Plus className="w-[18px] h-[18px] text-[#E53935]" />
               </button>

@@ -16,6 +16,7 @@ export default function CartReview({ table_number, cart_items, totals }: CartRev
   const updateQuantity = (line: CartLine, delta: number) => {
     const next = line.quantity + delta
     if (next < 1) return
+    if (next > line.max_quantity) return
     router.patch(
       `/order/cart/${line.line_id}`,
       { quantity: next },
@@ -114,7 +115,8 @@ export default function CartReview({ table_number, cart_items, totals }: CartRev
                       </div>
                       <button
                         onClick={() => updateQuantity(item, 1)}
-                        className="flex items-center justify-center w-8 h-8"
+                        disabled={item.quantity >= item.max_quantity}
+                        className="flex items-center justify-center w-8 h-8 disabled:opacity-40"
                       >
                         <Plus className="w-3.5 h-3.5 text-[#E53935]" />
                       </button>

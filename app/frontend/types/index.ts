@@ -26,6 +26,7 @@ export type MenuItem = {
   calories: number
   image: string
   recommended: boolean
+  max_quantity: number
   sizes: SizeOption[]
   addons: AddonOption[]
 }
@@ -39,6 +40,7 @@ export type CartLine = {
   quantity: number
   line_total: number
   image: string
+  max_quantity: number
 }
 
 export type CartTotals = {

@@ -29,11 +29,14 @@ class OrdersController < ApplicationController
   end
 
   def add_to_cart
+    item = find_menu_item(params[:item_id])
+    return redirect_to("/order") unless item
+
     add_to_cart!(
-      item_id: params[:item_id].to_i,
+      item_id: item[:id],
       size_id: params[:size_id],
       addon_ids: Array(params[:addon_ids]),
-      quantity: params[:quantity].to_i.clamp(1, 99)
+      quantity: params[:quantity].to_i.clamp(1, item[:max_quantity])
     )
     redirect_to "/order"
   end

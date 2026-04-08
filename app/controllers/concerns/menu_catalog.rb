@@ -29,6 +29,7 @@ module MenuCatalog
       calories: 620,
       image: "https://images.unsplash.com/photo-1639339468012-528c6bc0361f?w=800&fit=crop",
       recommended: true,
+      max_quantity: 10,
       sizes: DEFAULT_SIZES,
       addons: BURGER_ADDONS
     },
@@ -41,6 +42,7 @@ module MenuCatalog
       calories: 880,
       image: "https://images.unsplash.com/photo-1618538768832-fbd192fe94fc?w=800&fit=crop",
       recommended: false,
+      max_quantity: 8,
       sizes: DEFAULT_SIZES,
       addons: BURGER_ADDONS
     },
@@ -53,6 +55,7 @@ module MenuCatalog
       calories: 720,
       image: "https://images.unsplash.com/photo-1580821074864-8653bab910be?w=800&fit=crop",
       recommended: false,
+      max_quantity: 10,
       sizes: DEFAULT_SIZES,
       addons: BURGER_ADDONS
     },
@@ -65,6 +68,7 @@ module MenuCatalog
       calories: 690,
       image: "https://images.unsplash.com/photo-1637926779845-af0fe888291f?w=800&fit=crop",
       recommended: false,
+      max_quantity: 10,
       sizes: DEFAULT_SIZES,
       addons: BURGER_ADDONS
     },
@@ -77,6 +81,7 @@ module MenuCatalog
       calories: 710,
       image: "https://images.unsplash.com/photo-1603064752734-4c48eff53d05?w=800&fit=crop",
       recommended: false,
+      max_quantity: 8,
       sizes: DEFAULT_SIZES,
       addons: BURGER_ADDONS
     },
@@ -89,6 +94,7 @@ module MenuCatalog
       calories: 580,
       image: "https://images.unsplash.com/photo-1645619247001-a43761cd6307?w=800&fit=crop",
       recommended: false,
+      max_quantity: 6,
       sizes: DEFAULT_SIZES,
       addons: BURGER_ADDONS
     },
@@ -101,6 +107,7 @@ module MenuCatalog
       calories: 380,
       image: "https://images.unsplash.com/photo-1626869300065-3bfc3a8b2e42?w=800&fit=crop",
       recommended: false,
+      max_quantity: 15,
       sizes: [
         { id: "regular", label: "Regular", extra: 0 },
         { id: "large",   label: "Large",   extra: 80 }
@@ -119,6 +126,7 @@ module MenuCatalog
       calories: 460,
       image: "https://images.unsplash.com/photo-1639024471283-03518883512d?w=800&fit=crop",
       recommended: true,
+      max_quantity: 10,
       sizes: [
         { id: "regular", label: "Regular", extra: 0 },
         { id: "large",   label: "Large",   extra: 100 }
@@ -134,6 +142,7 @@ module MenuCatalog
       calories: 90,
       image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=800&fit=crop",
       recommended: false,
+      max_quantity: 20,
       sizes: DRINK_SIZES,
       addons: []
     },
@@ -146,6 +155,7 @@ module MenuCatalog
       calories: 140,
       image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=800&fit=crop",
       recommended: false,
+      max_quantity: 20,
       sizes: DRINK_SIZES,
       addons: []
     },
@@ -158,6 +168,7 @@ module MenuCatalog
       calories: 540,
       image: "https://images.unsplash.com/photo-1704708799871-8a738dbe5cbd?w=800&fit=crop",
       recommended: true,
+      max_quantity: 5,
       sizes: [
         { id: "regular", label: "Regular", extra: 0 }
       ],

@@ -32,7 +32,8 @@ module CartSession
         unit_price: unit_price,
         quantity: quantity,
         line_total: unit_price * quantity,
-        image: item[:image]
+        image: item[:image],
+        max_quantity: item[:max_quantity]
       }
     end
   end
@@ -83,7 +84,11 @@ module CartSession
       cart.reject! { |entry| (entry["line_id"] || entry[:line_id]) == line_id }
     else
       entry = cart.find { |e| (e["line_id"] || e[:line_id]) == line_id }
-      entry["quantity"] = quantity if entry
+      if entry
+        item = find_menu_item(entry["item_id"] || entry[:item_id])
+        max_quantity = item ? item[:max_quantity] : quantity
+        entry["quantity"] = quantity.clamp(1, max_quantity)
+      end
     end
     session[:cart] = cart
   end
