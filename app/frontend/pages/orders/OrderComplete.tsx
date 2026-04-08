@@ -1,31 +1,13 @@
 import { Head, Link } from '@inertiajs/react'
 import { Check, Home, Clock, CreditCard } from 'lucide-react'
-
-interface OrderItem {
-  id: number
-  name: string
-  detail: string
-  price: number
-  quantity: number
-}
+import type { PlacedOrder } from '@/types'
 
 interface OrderCompleteProps {
-  order_number: string
+  order: PlacedOrder
 }
 
-const mockItems: OrderItem[] = [
-  { id: 1, name: 'Classic Burger', detail: 'Large · Extra Cheese', price: 580, quantity: 2 },
-  { id: 2, name: 'Crispy Fries', detail: 'Regular · Sea Salt', price: 380, quantity: 1 },
-  { id: 3, name: 'Iced Lemon Tea', detail: 'Medium · Less Ice', price: 590, quantity: 1 },
-]
-
-const TAX_RATE = 0.1
-
-export default function OrderComplete({order_number}: OrderCompleteProps) {
-  const subtotal = mockItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const tax = Math.floor(subtotal * TAX_RATE)
-  const total = subtotal + tax
-  const totalItems = mockItems.reduce((sum, item) => sum + item.quantity, 0)
+export default function OrderComplete({ order }: OrderCompleteProps) {
+  const { order_number, items, totals } = order
 
   return (
     <>
@@ -76,16 +58,16 @@ export default function OrderComplete({order_number}: OrderCompleteProps) {
           {/* Summary Header */}
           <div className="flex items-center justify-between px-5 py-2.5">
             <span className="text-base font-semibold text-[#1A1210]">Order Summary</span>
-            <span className="text-[13px] text-[#9E8E7E]">{totalItems} items</span>
+            <span className="text-[13px] text-[#9E8E7E]">{totals.item_count} items</span>
           </div>
 
           {/* Items List */}
           <div className="flex flex-col px-5">
-            {mockItems.map((item, index) => (
+            {items.map((item, index) => (
               <div
-                key={item.id}
+                key={item.line_id}
                 className={`flex items-center justify-between py-2 ${
-                  index < mockItems.length - 1 ? 'border-b border-[#F0E0D0]' : ''
+                  index < items.length - 1 ? 'border-b border-[#F0E0D0]' : ''
                 }`}
               >
                 {/* Item Left */}
@@ -97,12 +79,12 @@ export default function OrderComplete({order_number}: OrderCompleteProps) {
                   {/* Item Info */}
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-semibold text-[#1A1210]">{item.name}</span>
-                    <span className="text-xs text-[#9E8E7E]">{item.detail}</span>
+                    <span className="text-xs text-[#9E8E7E]">{item.customization}</span>
                   </div>
                 </div>
                 {/* Price */}
                 <span className="text-sm font-semibold text-[#1A1210]">
-                  ¥{(item.price * item.quantity).toLocaleString()}
+                  ¥{item.line_total.toLocaleString()}
                 </span>
               </div>
             ))}
@@ -117,18 +99,18 @@ export default function OrderComplete({order_number}: OrderCompleteProps) {
           <div className="flex items-center justify-between">
             <span className="text-sm text-[#6D5D4B]">Subtotal</span>
             <span className="text-sm font-medium text-[#1A1210]">
-              ¥{subtotal.toLocaleString()}
+              ¥{totals.subtotal.toLocaleString()}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-[#6D5D4B]">Tax (10%)</span>
-            <span className="text-sm font-medium text-[#1A1210]">¥{tax.toLocaleString()}</span>
+            <span className="text-sm font-medium text-[#1A1210]">¥{totals.tax.toLocaleString()}</span>
           </div>
           <div className="h-px bg-[#F0E0D0]" />
           <div className="flex items-center justify-between">
             <span className="text-lg font-bold text-[#1A1210]">Total</span>
             <span className="text-[22px] font-bold text-[#E53935] tracking-[-0.5px]">
-              ¥{total.toLocaleString()}
+              ¥{totals.total.toLocaleString()}
             </span>
           </div>
         </div>

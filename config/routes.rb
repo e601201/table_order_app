@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-
   # Redirect to localhost from 127.0.0.1 to use same IP address with Vite server
   constraints(host: "127.0.0.1") do
     get "(*path)", to: redirect { |params, req| "#{req.protocol}localhost:#{req.port}/#{params[:path]}" }
@@ -26,6 +25,10 @@ Rails.application.routes.draw do
   get "order", to: "orders#home"
   get "order/item/:id", to: "orders#item_detail"
   get "order/cart", to: "orders#cart_review"
+  post "order/cart", to: "orders#add_to_cart"
+  patch "order/cart/:line_id", to: "orders#update_cart_item"
+  delete "order/cart/:line_id", to: "orders#remove_cart_item"
+  post "order/checkout", to: "orders#checkout"
   get "order/complete", to: "orders#order_complete"
 
   # Defines the root path route ("/")
