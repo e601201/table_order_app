@@ -35,6 +35,9 @@ export type CartLine = {
   line_id: string
   item_id: number
   name: string
+  size_id: string | null
+  size_label: string | null
+  addons: AddonOption[]
   customization: string
   unit_price: number
   quantity: number
