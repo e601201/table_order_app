@@ -70,6 +70,33 @@ class OrdersController < ApplicationController
     last = session.delete(:last_order)
     return redirect_to("/order") unless last
 
+    Order.transaction do
+      # 注文番号がすでに存在する場合は、注文を作成しない。
+      order = Order.find_or_create_by!(order_number: last["order_number"] || last[:order_number]) do |o|
+        o.table_number = last["table_number"] || last[:table_number]
+        o.subtotal     = last.dig("totals", "subtotal") || last.dig(:totals, :subtotal)
+        o.tax          = last.dig("totals", "tax")      || last.dig(:totals, :tax)
+        o.total        = last.dig("totals", "total")    || last.dig(:totals, :total)
+        o.placed_at    = last["placed_at"] || last[:placed_at]
+      end
+
+      # 注文項目が空の場合は、注文項目を作成する。
+      if order.order_items.empty?
+        (last["items"] || last[:items]).each do |line|
+          order.order_items.create!(
+            menu_item_id: line["item_id"]    || line[:item_id],
+            name:         line["name"]       || line[:name],
+            size_id:      line["size_id"]    || line[:size_id],
+            size_label:   line["size_label"] || line[:size_label],
+            addons:       line["addons"]     || line[:addons] || [],
+            unit_price:   line["unit_price"] || line[:unit_price],
+            quantity:     line["quantity"]   || line[:quantity],
+            line_total:   line["line_total"] || line[:line_total]
+          )
+        end
+      end
+    end
+
     render inertia: "orders/OrderComplete", props: { order: last }
   end
 
