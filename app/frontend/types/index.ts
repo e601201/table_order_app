@@ -60,3 +60,24 @@ export type PlacedOrder = {
   totals: CartTotals
   placed_at: string
 }
+
+export type KitchenOrderStatus = 'pending' | 'in_progress' | 'ready' | 'completed'
+
+export type KitchenOrderItem = {
+  id: number
+  name: string
+  quantity: number
+  size_label: string | null
+  addons: AddonOption[]
+}
+
+export type KitchenOrder = {
+  id: number
+  order_number: string
+  table_number: number
+  status: KitchenOrderStatus
+  placed_at: string
+  items: KitchenOrderItem[]
+}
+
+export type OrdersByStatus = Record<KitchenOrderStatus, KitchenOrder[]>

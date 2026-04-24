@@ -15,6 +15,7 @@ Rails.application.routes.draw do
 
   # for POC: Kitchen dashboard
   get "kitchen", to: "kitchen#dashboard"
+  patch "kitchen/orders/:id", to: "kitchen#update_order_status", as: :kitchen_order
 
   # for POC: Cashier dashboard
   get "cashier", to: "cashier#dashboard"
