@@ -81,3 +81,32 @@ export type KitchenOrder = {
 }
 
 export type OrdersByStatus = Record<KitchenOrderStatus, KitchenOrder[]>
+
+export type PaymentStatus = 'unpaid' | 'paid'
+
+export type PaymentMethod = 'cash' | 'credit_card'
+
+export type CashierOrderItem = {
+  id: number
+  name: string
+  quantity: number
+  unit_price: number
+  line_total: number
+  size_label: string | null
+  addons: AddonOption[]
+}
+
+export type CashierOrder = {
+  id: number
+  order_number: string
+  table_number: number
+  status: KitchenOrderStatus
+  payment_status: PaymentStatus
+  paid_at: string | null
+  placed_at: string
+  subtotal: number
+  tax: number
+  total: number
+  payment_method: PaymentMethod | null
+  items: CashierOrderItem[]
+}

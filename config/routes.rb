@@ -18,9 +18,10 @@ Rails.application.routes.draw do
   patch "kitchen/orders/:id", to: "kitchen#update_order_status", as: :kitchen_order
 
   # for POC: Cashier dashboard
-  get "cashier", to: "cashier#dashboard"
-  get "cashier/payment", to: "cashier#payment_confirm"
-  get "cashier/payment/complete", to: "cashier#payment_complete"
+  get  "cashier",                      to: "cashier#dashboard"
+  get  "cashier/payment/:id",          to: "cashier#payment_confirm",  as: :cashier_payment
+  post "cashier/payment/:id",          to: "cashier#process_payment",  as: :cashier_process_payment
+  get  "cashier/payment/:id/complete", to: "cashier#payment_complete", as: :cashier_payment_complete
 
   # for POC: Order pages
   get "order", to: "orders#home"

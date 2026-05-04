@@ -1,107 +1,11 @@
-import { Head, Link } from '@inertiajs/react'
-import { useState, useMemo } from 'react'
+import { Head, Link, router } from '@inertiajs/react'
+import { useMemo, useState } from 'react'
 import { Search, RefreshCw, CreditCard, X, ChefHat } from 'lucide-react'
-
-// --- 型定義 ---
-
-type OrderStatus = 'unpaid' | 'paid'
-
-interface OrderItem {
-  id: number
-  name: string
-  quantity: number
-  price: number
-}
-
-interface Order {
-  id: number
-  orderNumber: string
-  tableNumber: string
-  itemCount: number
-  amount: number
-  time: string
-  status: OrderStatus
-  items: OrderItem[]
-}
-
-// --- モックデータ ---
-
-const initialOrders: Order[] = [
-  {
-    id: 1,
-    orderNumber: '#1042',
-    tableNumber: 'T-5',
-    itemCount: 4,
-    amount: 3280,
-    time: '14:15',
-    status: 'unpaid',
-    items: [
-      { id: 1, name: 'Tonkotsu Ramen', quantity: 2, price: 1760 },
-      { id: 2, name: 'Gyoza (6 pcs)', quantity: 1, price: 480 },
-      { id: 3, name: 'Edamame', quantity: 1, price: 380 },
-      { id: 4, name: 'Draft Beer', quantity: 2, price: 660 },
-    ],
-  },
-  {
-    id: 2,
-    orderNumber: '#1041',
-    tableNumber: 'T-12',
-    itemCount: 2,
-    amount: 1960,
-    time: '14:00',
-    status: 'unpaid',
-    items: [
-      { id: 5, name: 'Chicken Katsu Curry', quantity: 1, price: 1280 },
-      { id: 6, name: 'Miso Soup', quantity: 2, price: 680 },
-    ],
-  },
-  {
-    id: 3,
-    orderNumber: '#1040',
-    tableNumber: 'T-3',
-    itemCount: 6,
-    amount: 5140,
-    time: '13:52',
-    status: 'unpaid',
-    items: [
-      { id: 7, name: 'Salmon Sashimi', quantity: 2, price: 2400 },
-      { id: 8, name: 'Tempura Udon', quantity: 1, price: 1180 },
-      { id: 9, name: 'Green Tea', quantity: 3, price: 1560 },
-    ],
-  },
-  {
-    id: 4,
-    orderNumber: '#1039',
-    tableNumber: 'T-8',
-    itemCount: 3,
-    amount: 2480,
-    time: '13:41',
-    status: 'unpaid',
-    items: [
-      { id: 10, name: 'Beef Teriyaki Don', quantity: 1, price: 1480 },
-      { id: 11, name: 'Karaage', quantity: 2, price: 1000 },
-    ],
-  },
-  {
-    id: 5,
-    orderNumber: '#1038',
-    tableNumber: 'T-1',
-    itemCount: 5,
-    amount: 4720,
-    time: '13:28',
-    status: 'unpaid',
-    items: [
-      { id: 12, name: 'Spicy Tuna Roll', quantity: 2, price: 1960 },
-      { id: 13, name: 'Agedashi Tofu', quantity: 1, price: 580 },
-      { id: 14, name: 'Chicken Ramen', quantity: 1, price: 1280 },
-      { id: 15, name: 'Matcha Ice Cream', quantity: 1, price: 900 },
-    ],
-  },
-]
+import type { CashierOrder, PaymentStatus } from '@/types'
 
 // --- サブコンポーネント ---
 
-function StatusBadge({ status }: { status: OrderStatus }) {
+function StatusBadge({ status }: { status: PaymentStatus }) {
   const isUnpaid = status === 'unpaid'
   return (
     <span
@@ -117,12 +21,17 @@ function StatusBadge({ status }: { status: OrderStatus }) {
   )
 }
 
+function formatTime(iso: string): string {
+  const date = new Date(iso)
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+}
+
 function OrderTable({
   orders,
   selectedOrderId,
   onSelectOrder,
 }: {
-  orders: Order[]
+  orders: CashierOrder[]
   selectedOrderId: number | null
   onSelectOrder: (id: number) => void
 }) {
@@ -153,25 +62,25 @@ function OrderTable({
             }}
           >
             <td className="px-4 py-3" style={{ fontSize: 14, fontWeight: 700, color: '#0a0a0a' }}>
-              {order.orderNumber}
+              {order.order_number}
             </td>
             <td className="px-4 py-3">
               <span className="flex items-center gap-1.5" style={{ fontSize: 13, fontWeight: 500, color: '#525252' }}>
                 <span style={{ fontSize: 12, color: '#a3a3a3' }}>🪑</span>
-                {order.tableNumber}
+                T-{order.table_number}
               </span>
             </td>
             <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 500, color: '#525252' }}>
-              {order.itemCount}
+              {order.items.reduce((sum, item) => sum + item.quantity, 0)}
             </td>
             <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 700, color: '#0a0a0a' }}>
-              ¥{order.amount.toLocaleString()}
+              ¥{order.total.toLocaleString()}
             </td>
             <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>
-              {order.time}
+              {formatTime(order.placed_at)}
             </td>
             <td className="px-4 py-3">
-              <StatusBadge status={order.status} />
+              <StatusBadge status={order.payment_status} />
             </td>
           </tr>
         ))}
@@ -184,7 +93,7 @@ function OrderSummary({
   order,
   onCancel,
 }: {
-  order: Order | null
+  order: CashierOrder | null
   onCancel: () => void
 }) {
   if (!order) {
@@ -198,9 +107,7 @@ function OrderSummary({
     )
   }
 
-  const subtotal = order.items.reduce((sum, item) => sum + item.price, 0)
-  const tax = Math.round(subtotal * 0.1)
-  const total = subtotal + tax
+  const isPaid = order.payment_status === 'paid'
 
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -213,7 +120,7 @@ function OrderSummary({
           className="flex items-center justify-center rounded-md px-2.5 py-1"
           style={{ fontSize: 13, fontWeight: 700, color: '#fafafa', backgroundColor: '#171717' }}
         >
-          {order.orderNumber}
+          {order.order_number}
         </span>
       </div>
 
@@ -223,10 +130,10 @@ function OrderSummary({
         style={{ borderBottom: '1px solid #f5f5f5' }}
       >
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
-          🪑 Table {order.tableNumber}
+          🪑 Table {order.table_number}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
-          🕐 {order.time}
+          🕐 {formatTime(order.placed_at)}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
           📦 {order.items.length} items
@@ -257,10 +164,15 @@ function OrderSummary({
                   </span>
                   <span style={{ fontSize: 14, fontWeight: 500, color: '#0a0a0a' }}>
                     {item.name}
+                    {item.size_label && (
+                      <span style={{ fontSize: 12, fontWeight: 400, color: '#a3a3a3', marginLeft: 6 }}>
+                        ({item.size_label})
+                      </span>
+                    )}
                   </span>
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0a' }}>
-                  ¥{item.price.toLocaleString()}
+                  ¥{item.line_total.toLocaleString()}
                 </span>
               </div>
             ))}
@@ -273,11 +185,11 @@ function OrderSummary({
         <div className="flex flex-col gap-2 pb-3">
           <div className="flex items-center justify-between">
             <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Subtotal</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{subtotal.toLocaleString()}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.subtotal.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Tax (10%)</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{tax.toLocaleString()}</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Tax</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.tax.toLocaleString()}</span>
           </div>
         </div>
         <div
@@ -286,28 +198,44 @@ function OrderSummary({
         >
           <span style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
           <span style={{ fontSize: 22, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
-            ¥{total.toLocaleString()}
+            ¥{order.total.toLocaleString()}
           </span>
         </div>
       </div>
 
       {/* アクションボタン */}
       <div className="px-5 pb-5 flex flex-col gap-2">
-        <Link
-          href="/cashier/payment"
-          className="flex items-center justify-center gap-2 w-full rounded-lg"
-          style={{
-            height: 48,
-            backgroundColor: '#171717',
-            color: '#fafafa',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: 14,
-            fontWeight: 600,
-          }}
-        >
-          <CreditCard size={18} />
-          Proceed to Payment — ¥{total.toLocaleString()}
-        </Link>
+        {isPaid ? (
+          <div
+            className="flex items-center justify-center gap-2 w-full rounded-lg"
+            style={{
+              height: 48,
+              backgroundColor: '#f0fdf4',
+              color: '#16a34a',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            Paid · ¥{order.total.toLocaleString()}
+          </div>
+        ) : (
+          <Link
+            href={`/cashier/payment/${order.id}`}
+            className="flex items-center justify-center gap-2 w-full rounded-lg"
+            style={{
+              height: 48,
+              backgroundColor: '#171717',
+              color: '#fafafa',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            <CreditCard size={18} />
+            Proceed to Payment — ¥{order.total.toLocaleString()}
+          </Link>
+        )}
         <button
           onClick={onCancel}
           className="flex items-center justify-center w-full rounded-lg"
@@ -329,8 +257,7 @@ function OrderSummary({
 
 // --- メインコンポーネント ---
 
-export default function CashierDashboard() {
-  const [orders] = useState<Order[]>(initialOrders)
+export default function CashierDashboard({ orders }: { orders: CashierOrder[] }) {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -339,13 +266,13 @@ export default function CashierDashboard() {
     const q = searchQuery.toLowerCase()
     return orders.filter(
       (order) =>
-        order.orderNumber.toLowerCase().includes(q) ||
-        order.tableNumber.toLowerCase().includes(q),
+        order.order_number.toLowerCase().includes(q) ||
+        String(order.table_number).includes(q),
     )
   }, [orders, searchQuery])
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId) ?? null
-  const unpaidCount = orders.filter((o) => o.status === 'unpaid').length
+  const unpaidCount = orders.filter((o) => o.payment_status === 'unpaid').length
 
   const now = new Date()
   const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
@@ -426,11 +353,21 @@ export default function CashierDashboard() {
 
             {/* テーブル */}
             <div className="flex-1 overflow-y-auto">
-              <OrderTable
-                orders={filteredOrders}
-                selectedOrderId={selectedOrderId}
-                onSelectOrder={setSelectedOrderId}
-              />
+              {filteredOrders.length === 0 ? (
+                <div
+                  className="flex flex-col items-center justify-center h-full gap-3"
+                  style={{ color: '#a3a3a3', fontFamily: 'Inter, sans-serif' }}
+                >
+                  <CreditCard size={40} strokeWidth={1.5} />
+                  <span style={{ fontSize: 14, fontWeight: 500 }}>No orders to display</span>
+                </div>
+              ) : (
+                <OrderTable
+                  orders={filteredOrders}
+                  selectedOrderId={selectedOrderId}
+                  onSelectOrder={setSelectedOrderId}
+                />
+              )}
             </div>
 
             {/* フッター */}
@@ -442,6 +379,7 @@ export default function CashierDashboard() {
                 {unpaidCount} unpaid orders found
               </span>
               <button
+                onClick={() => router.reload({ only: ['orders'] })}
                 className="flex items-center gap-1.5"
                 style={{ fontSize: 12, fontWeight: 600, color: '#525252' }}
               >

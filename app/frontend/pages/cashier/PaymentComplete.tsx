@@ -1,15 +1,6 @@
 import { Head, Link } from '@inertiajs/react'
 import { ChefHat, ArrowLeft, Check, ArrowRight, LayoutDashboard } from 'lucide-react'
-
-// --- モックデータ ---
-
-const mockPayment = {
-  orderNumber: '#0042',
-  tableNumber: 'Table 7',
-  paymentMethod: 'Cash',
-  timestamp: 'Mar 3, 2026 · 2:34 PM',
-  amountPaid: 77.33,
-}
+import type { CashierOrder } from '@/types'
 
 // --- サブコンポーネント ---
 
@@ -36,11 +27,28 @@ function DetailRow({
   )
 }
 
+function formatPaidAt(iso: string | null): string {
+  if (!iso) return '—'
+  const date = new Date(iso)
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).replace(',', ' ·')
+}
+
+function paymentMethodLabel(method: string | null): string {
+  if (method === 'credit_card') return 'Credit Card'
+  if (method === 'cash') return 'Cash'
+  return '—'
+}
+
 // --- メインコンポーネント ---
 
-export default function PaymentComplete() {
-  const payment = mockPayment
-
+export default function PaymentComplete({ payment }: { payment: CashierOrder }) {
   const now = new Date()
   const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
 
@@ -105,7 +113,7 @@ export default function PaymentComplete() {
             style={{ fontSize: 18, fontWeight: 600, color: '#0a0a0a', textDecoration: 'none' }}
           >
             <ArrowLeft size={20} />
-            Payment Cofirm
+            Back to Dashboard
           </Link>
           <div className="flex items-center gap-3">
             <span
@@ -121,7 +129,7 @@ export default function PaymentComplete() {
                 textAlign: 'center',
               }}
             >
-              Order {payment.orderNumber}
+              Order {payment.order_number}
             </span>
             <span
               className="flex items-center justify-center"
@@ -136,7 +144,7 @@ export default function PaymentComplete() {
                 textAlign: 'center',
               }}
             >
-              {payment.tableNumber}
+              Table {payment.table_number}
             </span>
           </div>
         </div>
@@ -196,10 +204,10 @@ export default function PaymentComplete() {
                 overflow: 'hidden',
               }}
             >
-              <DetailRow label="Order Number" value={payment.orderNumber} />
-              <DetailRow label="Table" value={payment.tableNumber} />
-              <DetailRow label="Payment Method" value={payment.paymentMethod} />
-              <DetailRow label="Timestamp" value={payment.timestamp} />
+              <DetailRow label="Order Number" value={payment.order_number} />
+              <DetailRow label="Table" value={`Table ${payment.table_number}`} />
+              <DetailRow label="Payment Method" value={paymentMethodLabel(payment.payment_method)} />
+              <DetailRow label="Timestamp" value={formatPaidAt(payment.paid_at)} />
               <div
                 className="flex items-center justify-between"
                 style={{
@@ -211,7 +219,7 @@ export default function PaymentComplete() {
                   Amount Paid
                 </span>
                 <span style={{ fontSize: 24, fontWeight: 700, color: '#0a0a0a' }}>
-                  ${payment.amountPaid.toFixed(2)}
+                  ¥{payment.total.toLocaleString()}
                 </span>
               </div>
             </div>

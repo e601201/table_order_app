@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_18_154513) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_04_075521) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -32,6 +32,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_154513) do
   create_table "orders", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "order_number", null: false
+    t.datetime "paid_at"
+    t.string "payment_method"
     t.datetime "placed_at", null: false
     t.integer "status", default: 0, null: false
     t.integer "subtotal", null: false
@@ -40,6 +42,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_18_154513) do
     t.integer "total", null: false
     t.datetime "updated_at", null: false
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
+    t.index ["paid_at"], name: "index_orders_on_paid_at"
   end
 
   add_foreign_key "order_items", "orders"

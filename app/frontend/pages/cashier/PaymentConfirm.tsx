@@ -1,36 +1,15 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ChefHat, ArrowLeft, CheckCircle, Banknote, CreditCard, X } from 'lucide-react'
-
-// --- 型定義 ---
-
-interface OrderItem {
-  id: number
-  name: string
-  description: string
-  quantity: number
-  price: number
-}
-
-type PaymentMethod = 'cash' | 'credit_card'
-
-// --- モックデータ ---
-
-const mockOrder = {
-  orderNumber: '#0012',
-  tableNumber: 7,
-  items: [
-    { id: 1, name: 'Teriyaki Chicken Bowl', description: 'Rice included, No onions', quantity: 2, price: 25.86 },
-    { id: 2, name: 'Salmon Sashimi (Rice)', description: 'Plain noodle', quantity: 1, price: 18.50 },
-    { id: 3, name: 'Miso Soup', description: 'Regular', quantity: 1, price: 10.50 },
-    { id: 4, name: 'Matcha Latte', description: 'Iced, oat milk', quantity: 1, price: 8.50 },
-    { id: 5, name: 'Edamame', description: 'With sea salt', quantity: 2, price: 9.00 },
-  ] as OrderItem[],
-}
+import type { CashierOrder, CashierOrderItem, PaymentMethod } from '@/types'
 
 // --- サブコンポーネント ---
 
-function OrderedItemRow({ item }: { item: OrderItem }) {
+function OrderedItemRow({ item }: { item: CashierOrderItem }) {
+  const description = [item.size_label, ...item.addons.map((a) => a.label)]
+    .filter(Boolean)
+    .join(', ')
+
   return (
     <div
       className="flex items-center justify-between py-3"
@@ -47,13 +26,15 @@ function OrderedItemRow({ item }: { item: OrderItem }) {
           <span style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0a' }}>
             {item.name}
           </span>
-          <span style={{ fontSize: 12, fontWeight: 400, color: '#a3a3a3' }}>
-            {item.description}
-          </span>
+          {description && (
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#a3a3a3' }}>
+              {description}
+            </span>
+          )}
         </div>
       </div>
       <span style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0a' }}>
-        ${item.price.toFixed(2)}
+        ¥{item.line_total.toLocaleString()}
       </span>
     </div>
   )
@@ -94,18 +75,25 @@ function PaymentMethodButton({
 
 // --- メインコンポーネント ---
 
-export default function PaymentConfirm() {
+export default function PaymentConfirm({ order }: { order: CashierOrder }) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
-
-  const order = mockOrder
-  const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const taxRate = 0.1
-  const tax = Math.round(subtotal * taxRate * 100) / 100
-  const total = Math.round((subtotal + tax) * 100) / 100
+  const [submitting, setSubmitting] = useState(false)
 
   const now = new Date()
   const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+
+  const handleConfirm = () => {
+    if (submitting) return
+    setSubmitting(true)
+    router.post(
+      `/cashier/payment/${order.id}`,
+      { payment_method: paymentMethod },
+      {
+        onFinish: () => setSubmitting(false),
+      },
+    )
+  }
 
   return (
     <>
@@ -160,10 +148,10 @@ export default function PaymentConfirm() {
               className="rounded-md px-3 py-1"
               style={{ fontSize: 13, fontWeight: 700, color: '#fafafa', backgroundColor: '#171717' }}
             >
-              Order {order.orderNumber}
+              Order {order.order_number}
             </span>
             <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>
-              Table {order.tableNumber}
+              Table {order.table_number}
             </span>
           </div>
         </div>
@@ -210,11 +198,11 @@ export default function PaymentConfirm() {
                 >
                   <div className="flex items-center justify-between">
                     <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Subtotal</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>${subtotal.toFixed(2)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Tax (10%)</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>${tax.toFixed(2)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Tax</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.tax.toLocaleString()}</span>
                   </div>
                   <div
                     className="flex items-center justify-between pt-3"
@@ -222,7 +210,7 @@ export default function PaymentConfirm() {
                   >
                     <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
-                      ${total.toFixed(2)}
+                      ¥{order.total.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -273,7 +261,7 @@ export default function PaymentConfirm() {
                 onClick={() => setShowConfirmModal(true)}
               >
                 <CheckCircle size={18} />
-                Confirm Payment · ${total.toFixed(2)}
+                Confirm Payment · ¥{order.total.toLocaleString()}
               </button>
             </div>
           </aside>
@@ -321,7 +309,7 @@ export default function PaymentConfirm() {
             >
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Order</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>{order.orderNumber}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>{order.order_number}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Method</span>
@@ -335,7 +323,7 @@ export default function PaymentConfirm() {
               >
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
                 <span style={{ fontSize: 20, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
-                  ${total.toFixed(2)}
+                  ¥{order.total.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -352,11 +340,12 @@ export default function PaymentConfirm() {
                   border: '1px solid #e5e5e5',
                 }}
                 onClick={() => setShowConfirmModal(false)}
+                disabled={submitting}
               >
                 Cancel
               </button>
-              <Link
-                href="/cashier/payment/complete"
+              <button
+                onClick={handleConfirm}
                 className="flex-1 flex items-center justify-center gap-2 rounded-lg"
                 style={{
                   height: 46,
@@ -364,11 +353,13 @@ export default function PaymentConfirm() {
                   color: '#fafafa',
                   fontSize: 14,
                   fontWeight: 700,
+                  opacity: submitting ? 0.6 : 1,
                 }}
+                disabled={submitting}
               >
                 <CheckCircle size={16} />
-                Confirm
-              </Link>
+                {submitting ? 'Processing...' : 'Confirm'}
+              </button>
             </div>
           </div>
         </div>
