@@ -23,7 +23,7 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
 
 function formatTime(iso: string): string {
   const date = new Date(iso)
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
 }
 
 function OrderTable({
