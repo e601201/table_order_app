@@ -7,9 +7,11 @@ class Order < ApplicationRecord
   validates :table_number, :subtotal, :tax, :total, :placed_at, presence: true
 
   scope :for_cashier_today, -> {
-    where(placed_at: Time.zone.now.all_day)
-      .where("status = ? OR paid_at IS NOT NULL", statuses[:completed])
-      .order(placed_at: :desc)
+    today_orders = where(placed_at: Time.zone.today.all_day)
+    today_orders.where(status: :completed)
+                .or(today_orders.where.not(paid_at: nil))
+                .order(Arel.sql("paid_at IS NULL DESC"))
+                .order(placed_at: :desc)
   }
 
   def paid?
