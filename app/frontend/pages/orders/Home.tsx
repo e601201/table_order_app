@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react'
 import { useMemo, useState } from 'react'
 import { ShoppingCart, Flame, Star } from 'lucide-react'
-import type { MenuItem } from '@/types'
+import type { MenuItem, OrderType } from '@/types'
 
 const categories = [
   { id: 'burgers', label: 'Burgers', emoji: '🍔' },
@@ -11,7 +11,8 @@ const categories = [
 ]
 
 interface OrderHomeProps {
-  table_number: number
+  table_number: number | null
+  order_type: OrderType
   restaurant_name: string
   menu_items: MenuItem[]
   cart_count: number
@@ -19,6 +20,7 @@ interface OrderHomeProps {
 
 export default function OrderHome({
   table_number,
+  order_type,
   restaurant_name,
   menu_items,
   cart_count,
@@ -52,8 +54,14 @@ export default function OrderHome({
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-lg bg-[#FFF8E1] border-[1.5px] border-[#FFB300]">
-              <Star className="w-4 h-4 md:w-5 md:h-5 text-[#FB8C00]" fill="#FB8C00" />
-              <span className="text-xs md:text-sm font-semibold text-[#1A1210]">Table {table_number}</span>
+              {order_type === 'in_store' ? (
+                <>
+                  <Star className="w-4 h-4 md:w-5 md:h-5 text-[#FB8C00]" fill="#FB8C00" />
+                  <span className="text-xs md:text-sm font-semibold text-[#1A1210]">Table {table_number}</span>
+                </>
+              ) : (
+                <span className="text-xs md:text-sm font-semibold text-[#1A1210]">Takeout</span>
+              )}
             </div>
           </div>
         </header>

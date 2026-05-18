@@ -1,15 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, Check } from 'lucide-react'
-import type { CartLine, CartTotals } from '@/types'
+import type { CartLine, CartTotals, OrderType } from '@/types'
 
 interface CartReviewProps {
-  table_number: number
+  table_number: number | null
+  order_type: OrderType
   cart_items: CartLine[]
   totals: CartTotals
 }
 
-export default function CartReview({ table_number, cart_items, totals }: CartReviewProps) {
+export default function CartReview({ table_number, order_type, cart_items, totals }: CartReviewProps) {
   const [specialInstructions, setSpecialInstructions] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
@@ -51,7 +52,9 @@ export default function CartReview({ table_number, cart_items, totals }: CartRev
             <span className="text-lg font-bold text-[#1A1210] tracking-[-0.3px]">Your Cart</span>
           </div>
           <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FFF8E1] border-[1.5px] border-[#FFB300]">
-            <span className="text-xs font-semibold text-[#1A1210]">Table {table_number}</span>
+            <span className="text-xs font-semibold text-[#1A1210]">
+              {order_type === 'takeout' ? 'Takeout' : `Table ${table_number}`}
+            </span>
           </div>
         </div>
 

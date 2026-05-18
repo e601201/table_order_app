@@ -6,6 +6,7 @@ class OrdersController < ApplicationController
     lines = cart_lines
     render inertia: "orders/Home", props: {
       table_number: table_number,
+      order_type: order_type,
       restaurant_name: "Burger House",
       menu_items: MENU_ITEMS,
       cart_count: lines.sum { |l| l[:quantity] }
@@ -23,6 +24,7 @@ class OrdersController < ApplicationController
     lines = cart_lines
     render inertia: "orders/CartReview", props: {
       table_number: table_number,
+      order_type: order_type,
       cart_items: lines,
       totals: cart_totals(lines)
     }
@@ -58,6 +60,7 @@ class OrdersController < ApplicationController
     session[:last_order] = {
       order_number: "#A-#{rand(1000..9999)}",
       table_number: table_number,
+      order_type: order_type,
       items: lines,
       totals: cart_totals(lines),
       placed_at: Time.current.iso8601
@@ -73,6 +76,7 @@ class OrdersController < ApplicationController
     Order.transaction do
       # 注文番号がすでに存在する場合は、注文を作成しない。
       order = Order.find_or_create_by!(order_number: last["order_number"] || last[:order_number]) do |o|
+        o.order_type   = last["order_type"]   || last[:order_type] || "in_store"
         o.table_number = last["table_number"] || last[:table_number]
         o.subtotal     = last.dig("totals", "subtotal") || last.dig(:totals, :subtotal)
         o.tax          = last.dig("totals", "tax")      || last.dig(:totals, :tax)
@@ -102,7 +106,18 @@ class OrdersController < ApplicationController
 
   private
 
+  def order_type
+    if params[:order_type].present? && Order.order_types.key?(params[:order_type])
+      session[:order_type] = params[:order_type]
+    end
+    session[:order_type] || "in_store"
+  end
+
   def table_number
-    params[:table_number]&.to_i || session[:table_number] || 5
+    if params[:table_number].present?
+      session[:table_number] = params[:table_number].to_i
+    end
+    return nil if order_type == "takeout"
+    session[:table_number] || 5
   end
 end

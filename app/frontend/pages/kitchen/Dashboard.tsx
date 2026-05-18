@@ -123,7 +123,7 @@ function OrderCard({
       >
         <div className="flex flex-col gap-0.5">
           <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 800, color: '#0a0a0a' }}>
-            Table {order.table_number}
+            {order.order_type === 'takeout' ? 'Takeout' : `Table ${order.table_number}`}
           </span>
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500, color: '#737373' }}>
             {order.order_number}

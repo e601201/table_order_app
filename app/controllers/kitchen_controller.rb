@@ -29,6 +29,7 @@ class KitchenController < ApplicationController
         id: order.id,
         order_number: order.order_number,
         table_number: order.table_number,
+        order_type: order.order_type,
         status: order.status,
         placed_at: order.placed_at.iso8601,
         items: order.order_items.map do |item|

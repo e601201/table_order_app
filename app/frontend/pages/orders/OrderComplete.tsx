@@ -7,7 +7,8 @@ interface OrderCompleteProps {
 }
 
 export default function OrderComplete({ order }: OrderCompleteProps) {
-  const { order_number, items, totals } = order
+  const { order_number, items, totals, table_number, order_type } = order
+  const locationLabel = order_type === 'takeout' ? 'Takeout' : `Table ${table_number}`
 
   return (
     <>
@@ -36,6 +37,7 @@ export default function OrderComplete({ order }: OrderCompleteProps) {
             <span className="text-[28px] font-extrabold text-[#E53935] tracking-[-1px]">
               {order_number}
             </span>
+            <span className="text-xs font-semibold text-[#6D5D4B]">{locationLabel}</span>
           </div>
 
           {/* Prep Time Card */}
