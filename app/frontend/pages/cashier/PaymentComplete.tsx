@@ -144,7 +144,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 textAlign: 'center',
               }}
             >
-              Table {payment.table_number}
+              {payment.order_type === 'takeout' ? 'Takeout' : `Table ${payment.table_number}`}
             </span>
           </div>
         </div>
@@ -205,7 +205,10 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
               }}
             >
               <DetailRow label="Order Number" value={payment.order_number} />
-              <DetailRow label="Table" value={`Table ${payment.table_number}`} />
+              <DetailRow
+                label={payment.order_type === 'takeout' ? 'Order Type' : 'Table'}
+                value={payment.order_type === 'takeout' ? 'Takeout' : `Table ${payment.table_number}`}
+              />
               <DetailRow label="Payment Method" value={paymentMethodLabel(payment.payment_method)} />
               <DetailRow label="Timestamp" value={formatPaidAt(payment.paid_at)} />
               <div

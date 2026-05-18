@@ -53,9 +53,12 @@ export type CartTotals = {
   item_count: number
 }
 
+export type OrderType = 'in_store' | 'takeout'
+
 export type PlacedOrder = {
   order_number: string
-  table_number: number
+  table_number: number | null
+  order_type: OrderType
   items: CartLine[]
   totals: CartTotals
   placed_at: string
@@ -74,7 +77,8 @@ export type KitchenOrderItem = {
 export type KitchenOrder = {
   id: number
   order_number: string
-  table_number: number
+  table_number: number | null
+  order_type: OrderType
   status: KitchenOrderStatus
   placed_at: string
   items: KitchenOrderItem[]
@@ -99,7 +103,8 @@ export type CashierOrderItem = {
 export type CashierOrder = {
   id: number
   order_number: string
-  table_number: number
+  table_number: number | null
+  order_type: OrderType
   status: KitchenOrderStatus
   payment_status: PaymentStatus
   paid_at: string | null

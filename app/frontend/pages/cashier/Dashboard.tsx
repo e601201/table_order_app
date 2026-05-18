@@ -67,7 +67,7 @@ function OrderTable({
             <td className="px-4 py-3">
               <span className="flex items-center gap-1.5" style={{ fontSize: 13, fontWeight: 500, color: '#525252' }}>
                 <span style={{ fontSize: 12, color: '#a3a3a3' }}>🪑</span>
-                T-{order.table_number}
+                {order.order_type === 'takeout' ? 'Takeout' : `T-${order.table_number}`}
               </span>
             </td>
             <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 500, color: '#525252' }}>
@@ -130,7 +130,7 @@ function OrderSummary({
         style={{ borderBottom: '1px solid #f5f5f5' }}
       >
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
-          🪑 Table {order.table_number}
+          🪑 {order.order_type === 'takeout' ? 'Takeout' : `Table ${order.table_number}`}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
           🕐 {formatTime(order.placed_at)}
@@ -264,11 +264,11 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders
     const q = searchQuery.toLowerCase()
-    return orders.filter(
-      (order) =>
-        order.order_number.toLowerCase().includes(q) ||
-        String(order.table_number).includes(q),
-    )
+    return orders.filter((order) => {
+      if (order.order_number.toLowerCase().includes(q)) return true
+      if (order.order_type === 'takeout') return 'takeout'.includes(q)
+      return order.table_number !== null && String(order.table_number).includes(q)
+    })
   }, [orders, searchQuery])
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId) ?? null

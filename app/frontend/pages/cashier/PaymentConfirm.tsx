@@ -151,7 +151,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
               Order {order.order_number}
             </span>
             <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>
-              Table {order.table_number}
+              {order.order_type === 'takeout' ? 'Takeout' : `Table ${order.table_number}`}
             </span>
           </div>
         </div>

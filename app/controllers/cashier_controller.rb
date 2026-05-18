@@ -51,6 +51,7 @@ class CashierController < ApplicationController
       id: order.id,
       order_number: order.order_number,
       table_number: order.table_number,
+      order_type: order.order_type,
       status: order.status,
       payment_status: order.payment_status,
       paid_at: order.paid_at&.iso8601,
