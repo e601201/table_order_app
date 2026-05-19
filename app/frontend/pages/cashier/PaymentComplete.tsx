@@ -30,19 +30,18 @@ function DetailRow({
 function formatPaidAt(iso: string | null): string {
   if (!iso) return '—'
   const date = new Date(iso)
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString('ja-JP', {
+    year: 'numeric',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
-  }).replace(',', ' ·')
+  })
 }
 
 function paymentMethodLabel(method: string | null): string {
-  if (method === 'credit_card') return 'Credit Card'
-  if (method === 'cash') return 'Cash'
+  if (method === 'credit_card') return 'クレジットカード'
+  if (method === 'cash') return '現金'
   return '—'
 }
 
@@ -54,7 +53,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
 
   return (
     <>
-      <Head title="Payment Complete" />
+      <Head title="お支払い完了" />
       <div
         className="flex flex-col h-screen"
         style={{ backgroundColor: '#fafafa', fontFamily: 'Inter, sans-serif' }}
@@ -88,7 +87,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
               </span>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#fafafa', opacity: 0.8 }}>
-                Online
+                オンライン
               </span>
             </div>
             <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, fontWeight: 600, color: '#fafafa' }}>
@@ -113,7 +112,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
             style={{ fontSize: 18, fontWeight: 600, color: '#0a0a0a', textDecoration: 'none' }}
           >
             <ArrowLeft size={20} />
-            Back to Dashboard
+            ダッシュボードに戻る
           </Link>
           <div className="flex items-center gap-3">
             <span
@@ -129,7 +128,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 textAlign: 'center',
               }}
             >
-              Order {payment.order_number}
+              注文 {payment.order_number}
             </span>
             <span
               className="flex items-center justify-center"
@@ -144,7 +143,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 textAlign: 'center',
               }}
             >
-              {payment.order_type === 'takeout' ? 'Takeout' : `Table ${payment.table_number}`}
+              {payment.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${payment.table_number}`}
             </span>
           </div>
         </div>
@@ -178,7 +177,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
             {/* 成功メッセージ */}
             <div className="flex flex-col items-center" style={{ gap: 8, width: '100%' }}>
               <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0a0a0a', margin: 0 }}>
-                Payment Successful
+                お支払いが完了しました
               </h1>
               <p
                 style={{
@@ -190,7 +189,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                   maxWidth: 340,
                 }}
               >
-                The payment has been processed successfully.
+                お支払いの処理が正常に完了しました。
               </p>
             </div>
 
@@ -204,13 +203,13 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 overflow: 'hidden',
               }}
             >
-              <DetailRow label="Order Number" value={payment.order_number} />
+              <DetailRow label="注文番号" value={payment.order_number} />
               <DetailRow
-                label={payment.order_type === 'takeout' ? 'Order Type' : 'Table'}
-                value={payment.order_type === 'takeout' ? 'Takeout' : `Table ${payment.table_number}`}
+                label={payment.order_type === 'takeout' ? '注文タイプ' : 'テーブル'}
+                value={payment.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${payment.table_number}`}
               />
-              <DetailRow label="Payment Method" value={paymentMethodLabel(payment.payment_method)} />
-              <DetailRow label="Timestamp" value={formatPaidAt(payment.paid_at)} />
+              <DetailRow label="お支払い方法" value={paymentMethodLabel(payment.payment_method)} />
+              <DetailRow label="日時" value={formatPaidAt(payment.paid_at)} />
               <div
                 className="flex items-center justify-between"
                 style={{
@@ -219,7 +218,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 }}
               >
                 <span style={{ fontSize: 16, fontWeight: 600, color: '#0a0a0a' }}>
-                  Amount Paid
+                  お支払い金額
                 </span>
                 <span style={{ fontSize: 24, fontWeight: 700, color: '#0a0a0a' }}>
                   ¥{payment.total.toLocaleString()}
@@ -244,7 +243,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 }}
               >
                 <ArrowRight size={20} />
-                Next Customer
+                次の注文へ
               </Link>
               <Link
                 href="/cashier"
@@ -259,7 +258,7 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 }}
               >
                 <LayoutDashboard size={16} />
-                Return to Dashboard
+                ダッシュボードに戻る
               </Link>
             </div>
           </div>

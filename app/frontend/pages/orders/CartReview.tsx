@@ -35,7 +35,7 @@ export default function CartReview({ table_number, order_type, cart_items, total
 
   return (
     <>
-      <Head title="Your Cart" />
+      <Head title="カート" />
       <div
         className="relative mx-auto max-w-[390px] min-h-screen bg-[#FFF8F0] flex flex-col"
         style={{ fontFamily: 'Outfit, sans-serif' }}
@@ -49,11 +49,11 @@ export default function CartReview({ table_number, order_type, cart_items, total
             >
               <ArrowLeft className="w-5 h-5 text-[#1A1210]" />
             </Link>
-            <span className="text-lg font-bold text-[#1A1210] tracking-[-0.3px]">Your Cart</span>
+            <span className="text-lg font-bold text-[#1A1210] tracking-[-0.3px]">カート</span>
           </div>
           <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FFF8E1] border-[1.5px] border-[#FFB300]">
             <span className="text-xs font-semibold text-[#1A1210]">
-              {order_type === 'takeout' ? 'Takeout' : `Table ${table_number}`}
+              {order_type === 'takeout' ? 'テイクアウト' : `テーブル ${table_number}`}
             </span>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function CartReview({ table_number, order_type, cart_items, total
         <div className="flex-1 overflow-y-auto pb-[180px]">
           {/* Items Header */}
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
-            <span className="text-base font-semibold text-[#1A1210]">{totals.item_count} Items</span>
+            <span className="text-base font-semibold text-[#1A1210]">{totals.item_count} 点</span>
           </div>
 
           {/* Cart Items */}
@@ -132,12 +132,12 @@ export default function CartReview({ table_number, order_type, cart_items, total
             {cart_items.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <ShoppingBag className="w-12 h-12 text-[#C8B8A8]" />
-                <span className="text-sm text-[#9E8E7E]">Your cart is empty</span>
+                <span className="text-sm text-[#9E8E7E]">カートは空です</span>
                 <Link
                   href="/order"
                   className="text-sm font-semibold text-[#E53935]"
                 >
-                  Browse Menu
+                  メニューを見る
                 </Link>
               </div>
             )}
@@ -145,11 +145,11 @@ export default function CartReview({ table_number, order_type, cart_items, total
 
           {/* Special Instructions */}
           <div className="flex flex-col gap-2 px-5 py-4">
-            <span className="text-sm font-semibold text-[#1A1210]">Special Instructions</span>
+            <span className="text-sm font-semibold text-[#1A1210]">特別なご要望</span>
             <textarea
               value={specialInstructions}
               onChange={(e) => setSpecialInstructions(e.target.value)}
-              placeholder="Add any special requests..."
+              placeholder="特別なご要望があればご記入ください…"
               className="w-full h-14 px-4 py-3 rounded-xl bg-[#FFF3E0] border border-[#F0E0D0] text-[13px] text-[#6D5D4B] placeholder-[#C8B8A8] resize-none outline-none focus:border-[#E53935] transition-colors"
               style={{ fontFamily: 'Outfit, sans-serif' }}
             />
@@ -160,22 +160,22 @@ export default function CartReview({ table_number, order_type, cart_items, total
 
           {/* Order Summary */}
           <div className="flex flex-col gap-3 px-5 py-4">
-            <span className="text-base font-semibold text-[#1A1210]">Order Summary</span>
+            <span className="text-base font-semibold text-[#1A1210]">ご注文内容</span>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#6D5D4B]">Subtotal</span>
+              <span className="text-sm text-[#6D5D4B]">小計</span>
               <span className="text-sm font-medium text-[#1A1210]">
                 ¥{totals.subtotal.toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-[#6D5D4B]">Tax (10%)</span>
+              <span className="text-sm text-[#6D5D4B]">消費税 (10%)</span>
               <span className="text-sm font-medium text-[#1A1210]">
                 ¥{totals.tax.toLocaleString()}
               </span>
             </div>
             <div className="h-px bg-[#F0E0D0]" />
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold text-[#1A1210]">Total</span>
+              <span className="text-lg font-bold text-[#1A1210]">合計</span>
               <span className="text-[22px] font-bold text-[#E53935] tracking-[-0.5px]">
                 ¥{totals.total.toLocaleString()}
               </span>
@@ -187,14 +187,14 @@ export default function CartReview({ table_number, order_type, cart_items, total
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-[#F0E0D0] shadow-[0_-4px_16px_rgba(26,18,16,0.06)] px-5 pt-3 pb-7 flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-[#9E8E7E]">Amount to Pay</span>
+              <span className="text-xs font-medium text-[#9E8E7E]">お支払い金額</span>
               <span className="text-xl font-bold text-[#1A1210] tracking-[-0.5px]">
                 ¥{totals.total.toLocaleString()}
               </span>
             </div>
             <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#FFF3E0] border border-[#F0E0D0]">
               <ShoppingBag className="w-3.5 h-3.5 text-[#6D5D4B]" />
-              <span className="text-xs font-semibold text-[#6D5D4B]">{totals.item_count} items</span>
+              <span className="text-xs font-semibold text-[#6D5D4B]">{totals.item_count} 点</span>
             </div>
           </div>
           <button
@@ -203,10 +203,10 @@ export default function CartReview({ table_number, order_type, cart_items, total
             className="flex items-center justify-center gap-2.5 h-[52px] rounded-2xl bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.38),0_2px_4px_rgba(229,57,53,0.19)] hover:bg-[#C62828] disabled:opacity-50 disabled:hover:bg-[#E53935] transition-colors"
           >
             <Check className="w-5 h-5 text-white" />
-            <span className="text-base font-bold text-white">Confirm Order</span>
+            <span className="text-base font-bold text-white">注文を確定</span>
           </button>
           <p className="text-[11px] text-[#9E8E7E] text-center">
-            Pay at cashier after confirmation
+            ご注文確定後、レジでお支払いください
           </p>
         </div>
       </div>
@@ -226,9 +226,9 @@ export default function CartReview({ table_number, order_type, cart_items, total
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#FFF3E0]">
                   <ShoppingBag className="w-6 h-6 text-[#FB8C00]" />
                 </div>
-                <h2 className="text-lg font-bold text-[#1A1210]">Confirm Your Order</h2>
+                <h2 className="text-lg font-bold text-[#1A1210]">ご注文を確定しますか?</h2>
                 <p className="text-sm text-[#6D5D4B]">
-                  {totals.item_count} items · ¥{totals.total.toLocaleString()}
+                  {totals.item_count} 点 · ¥{totals.total.toLocaleString()}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -236,13 +236,13 @@ export default function CartReview({ table_number, order_type, cart_items, total
                   onClick={() => setShowConfirmModal(false)}
                   className="flex-1 h-11 rounded-xl bg-[#FFF3E0] border border-[#F0E0D0] text-sm font-semibold text-[#1A1210]"
                 >
-                  Cancel
+                  キャンセル
                 </button>
                 <button
                   onClick={placeOrder}
                   className="flex-1 h-11 rounded-xl bg-[#E53935] text-sm font-bold text-white shadow-[0_4px_12px_rgba(229,57,53,0.3)] hover:bg-[#C62828] transition-colors"
                 >
-                  Place Order
+                  注文する
                 </button>
               </div>
             </div>

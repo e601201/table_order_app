@@ -6,10 +6,10 @@ import type { KitchenOrder, KitchenOrderStatus, OrdersByStatus } from '@/types'
 // --- ステータス設定 ---
 
 const statusConfig: Record<KitchenOrderStatus, { color: string; bg: string; label: string }> = {
-  pending:     { color: '#dc2626', bg: '#fef2f2', label: 'New Orders' },
-  in_progress: { color: '#ea580c', bg: '#fff7ed', label: 'Preparing' },
-  ready:       { color: '#16a34a', bg: '#f0fdf4', label: 'Ready to Serve' },
-  completed:   { color: '#737373', bg: '#f5f5f5', label: 'Completed' },
+  pending:     { color: '#dc2626', bg: '#fef2f2', label: '新規注文' },
+  in_progress: { color: '#ea580c', bg: '#fff7ed', label: '調理中' },
+  ready:       { color: '#16a34a', bg: '#f0fdf4', label: '提供準備完了' },
+  completed:   { color: '#737373', bg: '#f5f5f5', label: '完了' },
 }
 
 const nextStatus: Record<KitchenOrderStatus, KitchenOrderStatus | null> = {
@@ -95,9 +95,9 @@ function OrderCard({
   const config = statusConfig[order.status]
 
   const buttonConfig: Record<KitchenOrderStatus, { label: string; icon: React.ReactNode; bg: string; textColor: string; border?: string }> = {
-    pending:     { label: 'Start Preparing', icon: <Flame size={16} color="#FFFFFF" />, bg: '#ea580c', textColor: '#FFFFFF' },
-    in_progress: { label: 'Mark Ready', icon: <Check size={16} color="#FFFFFF" />, bg: '#16a34a', textColor: '#FFFFFF' },
-    ready:       { label: 'Notify Server', icon: <Bell size={16} color="#0a0a0a" />, bg: '#f5f5f5', textColor: '#0a0a0a', border: '1px solid #e5e5e5' },
+    pending:     { label: '調理開始', icon: <Flame size={16} color="#FFFFFF" />, bg: '#ea580c', textColor: '#FFFFFF' },
+    in_progress: { label: '提供準備完了にする', icon: <Check size={16} color="#FFFFFF" />, bg: '#16a34a', textColor: '#FFFFFF' },
+    ready:       { label: 'スタッフに通知', icon: <Bell size={16} color="#0a0a0a" />, bg: '#f5f5f5', textColor: '#0a0a0a', border: '1px solid #e5e5e5' },
     completed:   { label: '', icon: null, bg: '', textColor: '' },
   }
 
@@ -123,7 +123,7 @@ function OrderCard({
       >
         <div className="flex flex-col gap-0.5">
           <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 800, color: '#0a0a0a' }}>
-            {order.order_type === 'takeout' ? 'Takeout' : `Table ${order.table_number}`}
+            {order.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${order.table_number}`}
           </span>
           <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 500, color: '#737373' }}>
             {order.order_number}
@@ -243,7 +243,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
 
   return (
     <>
-      <Head title="Kitchen Dashboard" />
+      <Head title="キッチンダッシュボード" />
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#fafafa', fontFamily: 'Inter, sans-serif' }}>
         {/* ヘッダーバー */}
         <header
@@ -253,7 +253,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
           <div className="flex items-center gap-3">
             <ChefHat size={28} color="#171717" />
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 20, fontWeight: 800, color: '#0a0a0a', letterSpacing: -0.5 }}>
-              Kitchen Orders
+              Kitchen 注文管理
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -263,7 +263,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
               </span>
               <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
-                Live
+                稼働中
               </span>
             </div>
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 20, fontWeight: 700, color: '#0a0a0a', letterSpacing: -0.5 }}>
@@ -283,13 +283,13 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
               className="px-3 pt-1 pb-2"
               style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: 600, color: '#737373', letterSpacing: 2 }}
             >
-              ORDER STATUS
+              注文ステータス
             </span>
 
             <SidebarNavItem
               active={activeFilter === 'all'}
               icon={<LayoutList size={18} color={activeFilter === 'all' ? '#fafafa' : '#171717'} />}
-              label="All Active"
+              label="すべての進行中"
               count={activeCount}
               color="#171717"
               bg="#f5f5f5"
@@ -298,7 +298,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
             <SidebarNavItem
               active={activeFilter === 'pending'}
               icon={<span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />}
-              label="New Orders"
+              label="新規注文"
               count={countByStatus('pending')}
               color="#dc2626"
               bg="#fef2f2"
@@ -307,7 +307,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
             <SidebarNavItem
               active={activeFilter === 'in_progress'}
               icon={<span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ea580c' }} />}
-              label="Preparing"
+              label="調理中"
               count={countByStatus('in_progress')}
               color="#ea580c"
               bg="#fff7ed"
@@ -316,7 +316,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
             <SidebarNavItem
               active={activeFilter === 'ready'}
               icon={<span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />}
-              label="Ready"
+              label="提供準備完了"
               count={countByStatus('ready')}
               color="#16a34a"
               bg="#f0fdf4"
@@ -340,7 +340,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
                     color: activeFilter === 'completed' ? '#fafafa' : '#737373',
                   }}
                 >
-                  Completed
+                  完了
                 </span>
               </div>
               <span
@@ -374,7 +374,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
 
               {!hasAny && (
                 <div className="flex items-center justify-center h-64">
-                  <span style={{ fontSize: 15, color: '#737373' }}>No orders to display</span>
+                  <span style={{ fontSize: 15, color: '#737373' }}>表示する注文がありません</span>
                 </div>
               )}
             </div>

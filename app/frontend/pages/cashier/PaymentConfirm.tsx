@@ -97,7 +97,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
 
   return (
     <>
-      <Head title="Payment Confirmation" />
+      <Head title="お支払い確認" />
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#ffffff', fontFamily: 'Inter, sans-serif' }}>
         {/* ヘッダーバー */}
         <header
@@ -122,7 +122,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
               </span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>Online</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>オンライン</span>
             </div>
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 700, color: '#fafafa' }}>
               {timeLabel}
@@ -141,17 +141,17 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
             style={{ fontSize: 14, fontWeight: 600, color: '#0a0a0a' }}
           >
             <ArrowLeft size={18} />
-            Order List
+            注文一覧
           </Link>
           <div className="flex items-center gap-3">
             <span
               className="rounded-md px-3 py-1"
               style={{ fontSize: 13, fontWeight: 700, color: '#fafafa', backgroundColor: '#171717' }}
             >
-              Order {order.order_number}
+              注文 {order.order_number}
             </span>
             <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>
-              {order.order_type === 'takeout' ? 'Takeout' : `Table ${order.table_number}`}
+              {order.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${order.table_number}`}
             </span>
           </div>
         </div>
@@ -166,10 +166,10 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
             {/* セクションヘッダー */}
             <div className="flex items-center justify-between px-6 py-4">
               <span style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
-                Ordered Items
+                注文アイテム
               </span>
               <span style={{ fontSize: 13, fontWeight: 500, color: '#a3a3a3' }}>
-                {order.items.length} items
+                {order.items.length} 点
               </span>
             </div>
 
@@ -190,25 +190,25 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
               {/* 注文サマリー */}
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif', marginBottom: 16 }}>
-                  Order Summary
+                  ご注文内容
                 </h3>
                 <div
                   className="rounded-lg p-4 flex flex-col gap-3"
                   style={{ backgroundColor: '#ffffff', border: '1px solid #e5e5e5' }}
                 >
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Subtotal</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>小計</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Tax</span>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>消費税</span>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.tax.toLocaleString()}</span>
                   </div>
                   <div
                     className="flex items-center justify-between pt-3"
                     style={{ borderTop: '1px solid #e5e5e5' }}
                   >
-                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>合計</span>
                     <span style={{ fontSize: 22, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
                       ¥{order.total.toLocaleString()}
                     </span>
@@ -219,19 +219,19 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
               {/* 支払い方法 */}
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif', marginBottom: 12 }}>
-                  Payment Method
+                  お支払い方法
                 </h3>
                 <div className="flex gap-3">
                   <PaymentMethodButton
                     method="cash"
-                    label="Cash"
+                    label="現金"
                     icon={Banknote}
                     selected={paymentMethod === 'cash'}
                     onSelect={setPaymentMethod}
                   />
                   <PaymentMethodButton
                     method="credit_card"
-                    label="Credit Card"
+                    label="クレジットカード"
                     icon={CreditCard}
                     selected={paymentMethod === 'credit_card'}
                     onSelect={setPaymentMethod}
@@ -245,7 +245,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
               <div className="flex items-center justify-center gap-2">
                 <span className="inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
                 <span style={{ fontSize: 13, fontWeight: 500, color: '#16a34a' }}>
-                  Ready for Payment
+                  お支払い準備完了
                 </span>
               </div>
               <button
@@ -261,7 +261,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
                 onClick={() => setShowConfirmModal(true)}
               >
                 <CheckCircle size={18} />
-                Confirm Payment · ¥{order.total.toLocaleString()}
+                支払いを確定 · ¥{order.total.toLocaleString()}
               </button>
             </div>
           </aside>
@@ -296,10 +296,10 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
                 <CheckCircle size={24} color="#16a34a" />
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
-                Confirm Payment
+                支払いの確定
               </h3>
               <p style={{ fontSize: 14, fontWeight: 400, color: '#737373', textAlign: 'center' }}>
-                Are you sure you want to process this payment?
+                この支払いを処理してよろしいですか?
               </p>
             </div>
 
@@ -308,20 +308,20 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
               style={{ backgroundColor: '#fafafa', border: '1px solid #e5e5e5' }}
             >
               <div className="flex items-center justify-between">
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Order</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>注文番号</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>{order.order_number}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Method</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>お支払い方法</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>
-                  {paymentMethod === 'cash' ? 'Cash' : 'Credit Card'}
+                  {paymentMethod === 'cash' ? '現金' : 'クレジットカード'}
                 </span>
               </div>
               <div
                 className="flex items-center justify-between pt-2"
                 style={{ borderTop: '1px solid #e5e5e5' }}
               >
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#0a0a0a' }}>合計</span>
                 <span style={{ fontSize: 20, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
                   ¥{order.total.toLocaleString()}
                 </span>
@@ -342,7 +342,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
                 onClick={() => setShowConfirmModal(false)}
                 disabled={submitting}
               >
-                Cancel
+                キャンセル
               </button>
               <button
                 onClick={handleConfirm}
@@ -358,7 +358,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
                 disabled={submitting}
               >
                 <CheckCircle size={16} />
-                {submitting ? 'Processing...' : 'Confirm'}
+                {submitting ? '処理中…' : '確定'}
               </button>
             </div>
           </div>

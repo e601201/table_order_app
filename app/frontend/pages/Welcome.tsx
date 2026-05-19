@@ -7,7 +7,7 @@ interface WelcomeProps {
 export default function Welcome({ app_name }: WelcomeProps) {
   return (
     <>
-      <Head title="Welcome" />
+      <Head title="ようこそ" />
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">

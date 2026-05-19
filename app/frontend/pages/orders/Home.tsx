@@ -4,10 +4,10 @@ import { ShoppingCart, Flame, Star } from 'lucide-react'
 import type { MenuItem, OrderType } from '@/types'
 
 const categories = [
-  { id: 'burgers', label: 'Burgers', emoji: '🍔' },
-  { id: 'sides', label: 'Sides', emoji: '🍟' },
-  { id: 'drinks', label: 'Drinks', emoji: '🥤' },
-  { id: 'kids', label: 'Kids', emoji: '🧒' },
+  { id: 'burgers', label: 'バーガー', emoji: '🍔' },
+  { id: 'sides', label: 'サイド', emoji: '🍟' },
+  { id: 'drinks', label: 'ドリンク', emoji: '🥤' },
+  { id: 'kids', label: 'キッズ', emoji: '🧒' },
 ]
 
 interface OrderHomeProps {
@@ -38,11 +38,11 @@ export default function OrderHome({
   )
 
   const activeCategoryLabel =
-    categories.find((c) => c.id === activeCategory)?.label ?? 'Menu'
+    categories.find((c) => c.id === activeCategory)?.label ?? 'メニュー'
 
   return (
     <>
-      <Head title="Order" />
+      <Head title="注文" />
       <div className="relative mx-auto max-w-[390px] md:max-w-[1024px] min-h-screen bg-[#FFF8F0] overflow-hidden" style={{ fontFamily: 'Outfit, sans-serif' }}>
         {/* Sticky Header */}
         <header className="sticky top-0 z-20 flex items-center justify-between h-14 md:h-[60px] px-4 md:px-6 bg-white border-b border-[#F0E0D0] shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
@@ -57,10 +57,10 @@ export default function OrderHome({
               {order_type === 'in_store' ? (
                 <>
                   <Star className="w-4 h-4 md:w-5 md:h-5 text-[#FB8C00]" fill="#FB8C00" />
-                  <span className="text-xs md:text-sm font-semibold text-[#1A1210]">Table {table_number}</span>
+                  <span className="text-xs md:text-sm font-semibold text-[#1A1210]">テーブル {table_number}</span>
                 </>
               ) : (
-                <span className="text-xs md:text-sm font-semibold text-[#1A1210]">Takeout</span>
+                <span className="text-xs md:text-sm font-semibold text-[#1A1210]">テイクアウト</span>
               )}
             </div>
           </div>
@@ -92,7 +92,7 @@ export default function OrderHome({
               <div className="flex items-center justify-between px-4 md:px-6">
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <Flame className="w-5 h-5 text-[#FB8C00]" />
-                  <span className="text-lg md:text-[18px] font-bold text-[#1A1210] tracking-tight">Recommended</span>
+                  <span className="text-lg md:text-[18px] font-bold text-[#1A1210] tracking-tight">おすすめ</span>
                 </div>
               </div>
               <div className="flex gap-3 md:gap-4 px-4 md:px-6 overflow-x-auto scrollbar-hide">
@@ -102,7 +102,7 @@ export default function OrderHome({
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFB300]">
                         <Star className="w-3 h-3 text-[#1A1210]" />
-                        <span className="text-[10px] font-semibold text-[#1A1210]">Recommended</span>
+                        <span className="text-[10px] font-semibold text-[#1A1210]">おすすめ</span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5 md:gap-2 p-2.5 px-3 md:p-3 md:px-3.5">
@@ -121,10 +121,10 @@ export default function OrderHome({
           <section className="flex flex-col gap-3 md:gap-4 px-4 md:px-6">
             <div className="flex items-center justify-between">
               <span className="text-lg md:text-xl font-bold text-[#1A1210] tracking-tight">{activeCategoryLabel}</span>
-              <span className="text-[13px] md:text-sm font-medium text-[#9E8E7E]">{categoryItems.length} items</span>
+              <span className="text-[13px] md:text-sm font-medium text-[#9E8E7E]">{categoryItems.length} 件</span>
             </div>
             {categoryItems.length === 0 ? (
-              <div className="py-10 text-center text-sm text-[#9E8E7E]">No items in this category yet.</div>
+              <div className="py-10 text-center text-sm text-[#9E8E7E]">このカテゴリーには商品がまだありません。</div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {categoryItems.map((item) => (
@@ -146,7 +146,7 @@ export default function OrderHome({
           {/* Floating Cart Button */}
           <Link href="/order/cart" className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-30 flex items-center gap-2.5 md:gap-3 px-5 py-3 md:px-6 md:py-3.5 rounded-full bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.5),0_2px_4px_rgba(229,57,53,0.25)] hover:bg-[#C62828] transition-colors">
             <ShoppingCart className="w-5 h-5 md:w-[22px] md:h-[22px] text-white" />
-            <span className="text-[15px] md:text-base font-semibold text-white">Cart</span>
+            <span className="text-[15px] md:text-base font-semibold text-white">カート</span>
             <span className="flex items-center justify-center w-6 h-6 md:w-[26px] md:h-[26px] rounded-full bg-[#FFB300] text-xs md:text-[13px] font-bold text-[#1A1210]">
               {cart_count}
             </span>

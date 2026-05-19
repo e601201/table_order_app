@@ -16,7 +16,7 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
         color: isUnpaid ? '#dc2626' : '#16a34a',
       }}
     >
-      {isUnpaid ? 'Unpaid' : 'Paid'}
+      {isUnpaid ? '未払い' : '支払い済み'}
     </span>
   )
 }
@@ -39,7 +39,7 @@ function OrderTable({
     <table className="w-full" style={{ fontFamily: 'Inter, sans-serif' }}>
       <thead>
         <tr style={{ borderBottom: '1px solid #e5e5e5' }}>
-          {['ORDER #', 'TABLE', 'ITEMS', 'AMOUNT', 'TIME', 'STATUS'].map((header) => (
+          {['注文番号', 'テーブル', '点数', '金額', '時刻', 'ステータス'].map((header) => (
             <th
               key={header}
               className="text-left px-4 py-2.5"
@@ -67,7 +67,7 @@ function OrderTable({
             <td className="px-4 py-3">
               <span className="flex items-center gap-1.5" style={{ fontSize: 13, fontWeight: 500, color: '#525252' }}>
                 <span style={{ fontSize: 12, color: '#a3a3a3' }}>🪑</span>
-                {order.order_type === 'takeout' ? 'Takeout' : `T-${order.table_number}`}
+                {order.order_type === 'takeout' ? 'テイクアウト' : `${order.table_number}番`}
               </span>
             </td>
             <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 500, color: '#525252' }}>
@@ -101,7 +101,7 @@ function OrderSummary({
       <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: '#a3a3a3' }}>
         <CreditCard size={40} strokeWidth={1.5} />
         <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 500 }}>
-          Select an order to view details
+          注文を選択して詳細を表示
         </span>
       </div>
     )
@@ -114,7 +114,7 @@ function OrderSummary({
       {/* ヘッダー */}
       <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #e5e5e5' }}>
         <span style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
-          Order Summary
+          ご注文内容
         </span>
         <span
           className="flex items-center justify-center rounded-md px-2.5 py-1"
@@ -130,13 +130,13 @@ function OrderSummary({
         style={{ borderBottom: '1px solid #f5f5f5' }}
       >
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
-          🪑 {order.order_type === 'takeout' ? 'Takeout' : `Table ${order.table_number}`}
+          🪑 {order.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${order.table_number}`}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
           🕐 {formatTime(order.placed_at)}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
-          📦 {order.items.length} items
+          📦 {order.items.length} 点
         </span>
       </div>
 
@@ -147,7 +147,7 @@ function OrderSummary({
             className="block pb-2"
             style={{ fontSize: 11, fontWeight: 600, color: '#a3a3a3', letterSpacing: 1.5 }}
           >
-            ORDERED ITEMS
+            注文アイテム
           </span>
           <div className="flex flex-col gap-2">
             {order.items.map((item) => (
@@ -184,11 +184,11 @@ function OrderSummary({
       <div className="px-5 py-4" style={{ borderTop: '1px solid #e5e5e5' }}>
         <div className="flex flex-col gap-2 pb-3">
           <div className="flex items-center justify-between">
-            <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Subtotal</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>小計</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.subtotal.toLocaleString()}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>Tax</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>消費税</span>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>¥{order.tax.toLocaleString()}</span>
           </div>
         </div>
@@ -196,7 +196,7 @@ function OrderSummary({
           className="flex items-center justify-between pt-3"
           style={{ borderTop: '1px solid #e5e5e5' }}
         >
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a' }}>Total</span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a' }}>合計</span>
           <span style={{ fontSize: 22, fontWeight: 800, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif' }}>
             ¥{order.total.toLocaleString()}
           </span>
@@ -217,7 +217,7 @@ function OrderSummary({
               fontWeight: 600,
             }}
           >
-            Paid · ¥{order.total.toLocaleString()}
+            支払い済み · ¥{order.total.toLocaleString()}
           </div>
         ) : (
           <Link
@@ -233,7 +233,7 @@ function OrderSummary({
             }}
           >
             <CreditCard size={18} />
-            Proceed to Payment — ¥{order.total.toLocaleString()}
+            決済に進む — ¥{order.total.toLocaleString()}
           </Link>
         )}
         <button
@@ -248,7 +248,7 @@ function OrderSummary({
             fontWeight: 500,
           }}
         >
-          Cancel Selection
+          選択を解除
         </button>
       </div>
     </div>
@@ -279,7 +279,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
 
   return (
     <>
-      <Head title="Cashier Dashboard" />
+      <Head title="レジダッシュボード" />
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#ffffff', fontFamily: 'Inter, sans-serif' }}>
         {/* ヘッダーバー */}
         <header
@@ -304,7 +304,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
                 <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75 animate-ping" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
               </span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>Online</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#22c55e' }}>オンライン</span>
             </div>
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 700, color: '#fafafa' }}>
               {timeLabel}
@@ -325,7 +325,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
                 <Search size={16} color="#a3a3a3" />
                 <input
                   type="text"
-                  placeholder="Search by order # or table #..."
+                  placeholder="注文番号またはテーブル番号で検索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 bg-transparent outline-none"
@@ -347,7 +347,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
                   fontWeight: 600,
                 }}
               >
-                Search
+                検索
               </button>
             </div>
 
@@ -359,7 +359,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
                   style={{ color: '#a3a3a3', fontFamily: 'Inter, sans-serif' }}
                 >
                   <CreditCard size={40} strokeWidth={1.5} />
-                  <span style={{ fontSize: 14, fontWeight: 500 }}>No orders to display</span>
+                  <span style={{ fontSize: 14, fontWeight: 500 }}>表示する注文がありません</span>
                 </div>
               ) : (
                 <OrderTable
@@ -376,7 +376,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
               style={{ borderTop: '1px solid #e5e5e5' }}
             >
               <span style={{ fontSize: 12, fontWeight: 500, color: '#a3a3a3' }}>
-                {unpaidCount} unpaid orders found
+                未払い注文 {unpaidCount} 件
               </span>
               <button
                 onClick={() => router.reload({ only: ['orders'] })}
@@ -384,7 +384,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
                 style={{ fontSize: 12, fontWeight: 600, color: '#525252' }}
               >
                 <RefreshCw size={14} />
-                Refresh
+                更新
               </button>
             </div>
           </div>

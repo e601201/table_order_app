@@ -90,9 +90,9 @@ export default function ItemDetail({ item }: ItemDetailProps) {
               {item.sizes.length > 0 && (
                 <div className="flex flex-col gap-3 md:gap-4 px-5 py-3 md:px-7 md:py-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-base md:text-lg font-semibold text-[#1A1210]">Size</span>
+                    <span className="text-base md:text-lg font-semibold text-[#1A1210]">サイズ</span>
                     <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-[#FFEBEE] text-[11px] md:text-xs font-semibold text-[#E53935]">
-                      Required
+                      必須
                     </span>
                   </div>
                   <div className="flex flex-col">
@@ -140,9 +140,9 @@ export default function ItemDetail({ item }: ItemDetailProps) {
               {item.addons.length > 0 && (
                 <div className="flex flex-col gap-3 md:gap-4 px-5 py-3 md:px-7 md:py-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-base md:text-lg font-semibold text-[#1A1210]">Add-ons</span>
+                    <span className="text-base md:text-lg font-semibold text-[#1A1210]">追加トッピング</span>
                     <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full bg-[#FFF3E0] text-[11px] md:text-xs font-semibold text-[#9E8E7E]">
-                      Optional
+                      任意
                     </span>
                   </div>
                   <div className="flex flex-col">
@@ -197,8 +197,8 @@ export default function ItemDetail({ item }: ItemDetailProps) {
               {/* Quantity */}
               <div className="flex items-center justify-between px-5 py-4 md:px-7 md:py-5">
                 <div className="flex items-center gap-2 md:gap-3">
-                  <span className="text-base md:text-lg font-semibold text-[#1A1210]">Quantity</span>
-                  <span className="text-xs md:text-sm font-medium text-[#9E8E7E]">Max: {item.max_quantity}</span>
+                  <span className="text-base md:text-lg font-semibold text-[#1A1210]">数量</span>
+                  <span className="text-xs md:text-sm font-medium text-[#9E8E7E]">最大: {item.max_quantity}</span>
                 </div>
                 <div className="flex items-center rounded-xl border-[1.5px] border-[#F0E0D0] bg-white overflow-hidden">
                   <button
@@ -226,7 +226,7 @@ export default function ItemDetail({ item }: ItemDetailProps) {
         {/* Fixed Footer */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] md:max-w-[900px] bg-white border-t border-[#F0E0D0] shadow-[0_-4px_16px_rgba(26,18,16,0.06)] px-5 pt-3 pb-6 md:px-7 md:pt-4 md:pb-7 flex flex-col gap-3 md:gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center justify-between md:gap-3">
-            <span className="text-sm md:text-base font-medium text-[#6D5D4B]">Total</span>
+            <span className="text-sm md:text-base font-medium text-[#6D5D4B]">合計</span>
             <span className="text-[22px] md:text-[26px] font-bold text-[#1A1210] tracking-[-0.5px]">
               ¥{totalPrice.toLocaleString()}
             </span>
@@ -237,7 +237,7 @@ export default function ItemDetail({ item }: ItemDetailProps) {
             className="flex items-center justify-center gap-2.5 md:gap-3 h-[52px] md:h-[56px] md:px-10 md:min-w-[280px] rounded-2xl bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.38),0_2px_4px_rgba(229,57,53,0.19)] hover:bg-[#C62828] disabled:opacity-60 transition-colors"
           >
             <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            <span className="text-base md:text-lg font-bold text-white">Add to Cart</span>
+            <span className="text-base md:text-lg font-bold text-white">カートに追加</span>
           </button>
         </div>
       </div>
