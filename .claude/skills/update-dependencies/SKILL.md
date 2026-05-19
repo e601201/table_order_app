@@ -68,21 +68,21 @@ diff /tmp/Gemfile.lock.before Gemfile.lock \
 
 Format each entry as `- gemname OLD → NEW` (full-width arrow `→`, matching the existing commits). Skip dependencies whose only change is a checksum or platform line.
 
-Then commit:
+`Gemfile.lock` だけをステージする (`-a` は使わない — 他のファイルを巻き込まないため):
 
 ```bash
 git add Gemfile.lock
-git commit -m "$(cat <<'EOF'
+```
+
+次に、コミット作成は `serial-commit` スキルに委ねる。 `serial-commit` は author date のチェックを行うので、このスキル内で `git commit` を直接実行しない。 `serial-commit` を呼び出すときに、以下の形式の本文を使うよう伝える:
+
+```
 gem パッケージをアップデート
 - gemA X.Y.Z → A.B.C
 - gemB X.Y.Z → A.B.C
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
-EOF
-)"
 ```
 
-Use `git commit` only after `git add` — never `-a`, since other files must not be swept in.
+`Co-Authored-By` トレーラーは付けない (`serial-commit` の規約に従う)。
 
 ## ステップ 2 — npm の更新
 
@@ -123,17 +123,21 @@ The second `npm install` re-syncs `node_modules` to the restored lockfile. Repor
 
 Parse `/tmp/ncu.out` for lines of the form `pkgname  ^X.Y.Z  →  ^A.B.C` and reformat as `- pkgname X.Y.Z → A.B.C` (drop the `^` / `~` prefix to match the existing commits' style).
 
+`package.json` と `package-lock.json` だけをステージする:
+
 ```bash
 git add package.json package-lock.json
-git commit -m "$(cat <<'EOF'
+```
+
+ステップ 1.5 と同様に、コミット作成は `serial-commit` スキルに委ねる。本文の形式:
+
+```
 npm パッケージをアップデート
 - pkgA X.Y.Z → A.B.C
 - pkgB X.Y.Z → A.B.C
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
-EOF
-)"
 ```
+
+`Co-Authored-By` トレーラーは付けない。
 
 ## 最終報告
 
