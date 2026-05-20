@@ -221,7 +221,46 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
   const handleAction = (order: KitchenOrder) => {
     const next = nextStatus[order.status]
     if (!next) return
-    router.patch(`/kitchen/orders/${order.id}`, { status: next }, { preserveScroll: true })
+
+    const from = order.status
+
+    // 楽観的更新: 元レーンから除外し、移動先レーンへ status を書き換えて挿入する。
+    // Optimistic UIの実験的な実装。APIリクエスト失敗時にはロールバックする。
+    router.replaceProp('ordersByStatus', (current: unknown) => {
+      const orders = current as OrdersByStatus
+      return {
+        ...orders,
+        [from]: orders[from].filter((o) => o.id !== order.id),
+        [next]: [...orders[next], { ...order, status: next }].sort(
+          (a, b) => new Date(b.placed_at).getTime() - new Date(a.placed_at).getTime(),
+        ),
+      }
+    })
+
+    // ロールバック: 反対方向の移動をもう一度かけて元に戻す。
+    const rollback = () => {
+      router.replaceProp('ordersByStatus', (current: unknown) => {
+        const orders = current as OrdersByStatus
+        return {
+          ...orders,
+          [next]: orders[next].filter((o) => o.id !== order.id),
+          [from]: [...orders[from], { ...order, status: from }].sort(
+            (a, b) => new Date(b.placed_at).getTime() - new Date(a.placed_at).getTime(),
+          ),
+        }
+      })
+    }
+
+    router.patch(
+      `/kitchen/orders/${order.id}`,
+      { status: next },
+      {
+        preserveScroll: true,
+        onError: rollback, // 422 などのバリデーションエラー
+        onHttpException: rollback, // 500 などのサーバ例外
+        onNetworkError: rollback, // 通信失敗
+      },
+    )
   }
 
   const countByStatus = (status: KitchenOrderStatus) => ordersByStatus[status].length
