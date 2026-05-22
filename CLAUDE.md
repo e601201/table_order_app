@@ -80,3 +80,17 @@ GET /cashier/payment/complete → cashier#payment_complete  (決済完了)
 
 ### データベース
 PostgreSQL. No migrations or models defined yet — currently using mock data in frontend components.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `e601201/table_order_app` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical names (`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
