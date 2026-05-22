@@ -3,6 +3,9 @@ class OrdersController < ApplicationController
   include CartSession
 
   def home
+    # ウェルカム画面からの遷移は「新しい客のセッション開始」として Cart をクリアする
+    clear_cart if params[:order_type].present?
+
     lines = cart_lines
     render inertia: "orders/Home", props: {
       table_number: table_number,
