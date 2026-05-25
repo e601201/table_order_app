@@ -8,11 +8,15 @@ An `Order` carries two independent state axes: **kitchen progress** (where the f
 
 ### Roles
 
-Three roles share the system. Each role has its own surface (`/order`, `/kitchen`, `/cashier`) and a distinct responsibility on the `Order`'s axes.
+Roles share the system. The **Customer** is unauthenticated and uses the public `/order` tablet surface. Everyone else is a **Staff** — an authenticated account that must log in before reaching its surface (`/kitchen`, `/cashier`, and admin screens). A Staff carries exactly one role that names its responsibility.
 
 **Customer** (canonical Japanese: **客**):
-The person assembling a `Cart` and placing an `Order` from the in-table tablet. Raises `OrderPlaced`. Does not advance kitchen progress and does not settle payment.
+The person assembling a `Cart` and placing an `Order` from the in-table tablet. Raises `OrderPlaced`. Does not advance kitchen progress and does not settle payment. Not a `Staff` and never logs in.
 _Avoid_: Guest, diner, patron, お客様, ゲスト (acceptable as customer-facing UI copy aliases only; canonical name remains "Customer / 客")
+
+**Staff** (canonical Japanese: **スタッフ**):
+An authenticated, persisted account for a non-customer person who logs in to operate the system. Identified by a login credential and carrying exactly one `role` (`Kitchen`, `Cashier`, or `Admin`). The role gates which surfaces the Staff may reach. A `Customer` is never a `Staff`.
+_Avoid_: User (too overloaded — the Customer is also a system user), Account, Member, Employee
 
 **Kitchen** (canonical Japanese: **キッチン**):
 The role that advances every kitchen-progress transition: `Pending → In progress → Ready → Served`. Receives `OrderPlaced` and raises `OrderServed`. Does not touch the payment axis.
@@ -21,6 +25,10 @@ _Avoid_: Chef, cook, galley, 厨房, 調理場, 調理 (the act of cooking is "p
 **Cashier** (canonical Japanese: **レジ**):
 The role that advances the payment axis (`Unpaid → Paid`). Works against the queue of `Served + Unpaid` orders. Does not touch the kitchen-progress axis.
 _Avoid_: Register, checkout, 会計係, 会計スタッフ, 会計 (the **role** name is "レジ"; "会計" is reserved for the act of settling — see the Flagged ambiguities)
+
+**Admin** (canonical Japanese: **管理者**):
+A `Staff` role for system administration rather than `Order` operation. Unlike `Kitchen` and `Cashier`, it advances neither order axis. Conceptually an `Admin` may manage `Staff` accounts, manage the `Menu`, and reach every staff surface — though only `Staff` account management and login are built today (Menu management remains a future capability; the `Menu` is still a static constant).
+_Avoid_: Superuser, root, owner, オーナー, 店長
 
 ### Menu
 
