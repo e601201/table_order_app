@@ -1,4 +1,7 @@
 class CashierController < ApplicationController
+  before_action :require_login!
+  before_action -> { authorize_roles!(:cashier, :admin) }
+
   def dashboard
     orders = Order.for_cashier_today.includes(:order_items)
     render inertia: "cashier/Dashboard", props: {
