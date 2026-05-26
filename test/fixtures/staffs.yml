@@ -1,0 +1,20 @@
+# パスワードはすべて "password" (8文字)。password_digest は bcrypt でハッシュ化する。
+<% password_digest = BCrypt::Password.create("password", cost: BCrypt::Engine::MIN_COST) %>
+
+kitchen_staff:
+  login_id: kitchen1
+  name: キッチン担当
+  role: <%= Staff.roles[:kitchen] %>
+  password_digest: <%= password_digest %>
+
+cashier_staff:
+  login_id: cashier1
+  name: レジ担当
+  role: <%= Staff.roles[:cashier] %>
+  password_digest: <%= password_digest %>
+
+admin_staff:
+  login_id: admin1
+  name: 管理者
+  role: <%= Staff.roles[:admin] %>
+  password_digest: <%= password_digest %>
