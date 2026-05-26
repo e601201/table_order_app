@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react'
 import { useState } from 'react'
-import { ChefHat, LayoutList, CircleCheck, Clock, Flame, Check, Bell } from 'lucide-react'
+import { ChefHat, LayoutList, CircleCheck, Clock, Flame, Check, Bell, LogOut } from 'lucide-react'
+import FlashMessage from '@/components/FlashMessage'
 import type { KitchenOrder, KitchenOrderStatus, OrdersByStatus } from '@/types'
 
 // --- ステータス設定 ---
@@ -283,6 +284,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
   return (
     <>
       <Head title="キッチンダッシュボード" />
+      <FlashMessage />
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#fafafa', fontFamily: 'Inter, sans-serif' }}>
         {/* ヘッダーバー */}
         <header
@@ -308,6 +310,15 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 20, fontWeight: 700, color: '#0a0a0a', letterSpacing: -0.5 }}>
               {timeLabel}
             </span>
+            <button
+              type="button"
+              onClick={() => router.delete('/logout')}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5"
+              style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 600, color: '#525252', border: '1px solid #e5e5e5' }}
+            >
+              <LogOut size={15} />
+              ログアウト
+            </button>
           </div>
         </header>
 

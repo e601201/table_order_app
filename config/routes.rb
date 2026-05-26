@@ -13,6 +13,16 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  # スタッフ認証（ログイン/ログアウト）
+  get    "login",  to: "sessions#new",     as: :login
+  post   "login",  to: "sessions#create"
+  delete "logout", to: "sessions#destroy", as: :logout
+
+  # 管理画面（Admin のみ）— Staff 登録
+  namespace :admin do
+    resources :staffs, only: %i[index create]
+  end
+
   # for POC: Kitchen dashboard
   get "kitchen", to: "kitchen#dashboard"
   patch "kitchen/orders/:id", to: "kitchen#update_order_status", as: :kitchen_order

@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useMemo, useState } from 'react'
-import { Search, RefreshCw, CreditCard, X, ChefHat } from 'lucide-react'
+import { Search, RefreshCw, CreditCard, X, ChefHat, LogOut } from 'lucide-react'
+import FlashMessage from '@/components/FlashMessage'
 import type { CashierOrder, PaymentStatus } from '@/types'
 
 // --- サブコンポーネント ---
@@ -280,6 +281,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
   return (
     <>
       <Head title="レジダッシュボード" />
+      <FlashMessage />
       <div className="flex flex-col h-screen" style={{ backgroundColor: '#ffffff', fontFamily: 'Inter, sans-serif' }}>
         {/* ヘッダーバー */}
         <header
@@ -309,6 +311,15 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 700, color: '#fafafa' }}>
               {timeLabel}
             </span>
+            <button
+              type="button"
+              onClick={() => router.delete('/logout')}
+              className="flex items-center gap-1.5 rounded px-2 py-1"
+              style={{ fontSize: 12, fontWeight: 600, color: '#a3a3a3', backgroundColor: '#262626' }}
+            >
+              <LogOut size={14} />
+              ログアウト
+            </button>
           </div>
         </header>
 

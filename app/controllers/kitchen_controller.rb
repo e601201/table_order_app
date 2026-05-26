@@ -1,4 +1,7 @@
 class KitchenController < ApplicationController
+  before_action :require_login!
+  before_action -> { authorize_roles!(:kitchen, :admin) }
+
   def dashboard
     orders = Order.includes(:order_items)
                   .where(placed_at: Time.zone.now.all_day)

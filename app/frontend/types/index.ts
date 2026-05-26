@@ -1,9 +1,26 @@
 export type FlashData = {
-  notice?: string
-  alert?: string
+  notice?: string | null
+  alert?: string | null
 }
 
-export type SharedProps = {}
+export type StaffRole = 'kitchen' | 'cashier' | 'admin'
+
+export type AuthStaff = {
+  id: number
+  name: string
+  role: StaffRole
+  login_id: string
+}
+
+export type Auth = {
+  staff: AuthStaff | null
+  signed_in: boolean
+}
+
+export type SharedProps = {
+  auth: Auth
+  flash: FlashData
+}
 
 export type SizeOption = {
   id: string

@@ -1,0 +1,28 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 70,
+      "fingerprint": "1ae65075466255d533be523df8f2fe97008bfa9af4e313660acf8d319c9e0c72",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/admin/staffs_controller.rb",
+      "line": 26,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "code": "params.permit(:login_id, :name, :role, :password, :password_confirmation)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::StaffsController",
+        "method": "staff_params"
+      },
+      "user_input": null,
+      "confidence": "Medium",
+      "cwe_id": [
+        915
+      ],
+      "note": "意図的。:role の割り当ては Admin 専用画面の機能そのもの。authorize_roles!(:admin) でガード済みで、権限昇格にはならない。"
+    }
+  ],
+  "brakeman_version": "7.1.0"
+}
