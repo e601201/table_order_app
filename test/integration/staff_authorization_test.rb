@@ -45,6 +45,23 @@ class StaffAuthorizationTest < ActionDispatch::IntegrationTest
     assert_equal "権限がありません", flash[:alert]
   end
 
+  test "kitchen はスタッフの編集・更新・削除ができない" do
+    login_as(:kitchen_staff)
+    target = staffs(:cashier_staff)
+
+    get edit_admin_staff_path(target)
+    assert_redirected_to kitchen_path
+
+    patch admin_staff_path(target), params: { name: "侵入" }
+    assert_redirected_to kitchen_path
+    assert_equal "レジ担当", target.reload.name
+
+    assert_no_difference "Staff.count" do
+      delete admin_staff_path(target)
+    end
+    assert_redirected_to kitchen_path
+  end
+
   test "cashier は /cashier にアクセスできる" do
     login_as(:cashier_staff)
     get cashier_path
