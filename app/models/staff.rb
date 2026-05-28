@@ -11,4 +11,11 @@ class Staff < ApplicationRecord
   validates :name, presence: true
   validates :role, presence: true
   validates :password, length: { minimum: 8 }, allow_nil: true
+
+  # 不変条件「管理者 ≥ 1」のための判定。
+  # この Staff が管理者で、かつ管理者が他にいない（自分が最後の1人）なら true。
+  # ADR 0003 に基づき、最後の管理者の削除・降格を禁止するために使う。
+  def last_admin?
+    admin? && Staff.admin.count <= 1
+  end
 end

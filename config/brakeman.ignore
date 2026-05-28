@@ -22,6 +22,29 @@
         915
       ],
       "note": "意図的。:role の割り当ては Admin 専用画面の機能そのもの。authorize_roles!(:admin) でガード済みで、権限昇格にはならない。"
+    },
+    {
+      "warning_type": "Mass Assignment",
+      "warning_code": 70,
+      "fingerprint": "6fe89e2137325c49f080c149436e1ad3ad54f72b8feedfaf46c83fa3fbbbaadd",
+      "check_name": "PermitAttributes",
+      "message": "Potentially dangerous key allowed for mass assignment",
+      "file": "app/controllers/admin/staffs_controller.rb",
+      "line": 76,
+      "link": "https://brakemanscanner.org/docs/warning_types/mass_assignment/",
+      "code": "params.permit(:name, :role, :password, :password_confirmation)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::StaffsController",
+        "method": "staff_update_params"
+      },
+      "user_input": null,
+      "confidence": "Medium",
+      "cwe_id": [
+        915
+      ],
+      "note": "意図的。編集時の :role 割り当ては Admin 専用画面の機能そのもの。authorize_roles!(:admin) でガード済み、login_id は不変、最後の管理者の降格は demoting_last_admin? で禁止。"
     }
   ],
   "brakeman_version": "7.1.0"

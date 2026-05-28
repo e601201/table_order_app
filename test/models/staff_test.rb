@@ -44,4 +44,20 @@ class StaffTest < ActiveSupport::TestCase
   test "role enum が定義されている" do
     assert_equal %w[kitchen cashier admin], Staff.roles.keys
   end
+
+  test "last_admin? は管理者が1人だけのとき true" do
+    admin = staffs(:admin_staff)
+    assert_equal 1, Staff.admin.count
+    assert admin.last_admin?
+  end
+
+  test "last_admin? は管理者が複数いるとき false" do
+    admin = staffs(:admin_staff)
+    Staff.create!(login_id: "admin2", name: "副管理者", role: :admin, password: "password")
+    assert_not admin.last_admin?
+  end
+
+  test "last_admin? は管理者でないスタッフでは false" do
+    assert_not staffs(:kitchen_staff).last_admin?
+  end
 end
