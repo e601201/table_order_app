@@ -11,7 +11,7 @@ class OrdersController < ApplicationController
       table_number: table_number,
       order_type: order_type,
       restaurant_name: "Burger House",
-      menu_items: MENU_ITEMS,
+      menu_items: MenuItem.with_attached_image.order(:id).map { |item| item.as_customer_json(image_variant: :thumb) },
       cart_count: lines.sum { |l| l[:quantity] }
     }
   end
@@ -20,7 +20,7 @@ class OrdersController < ApplicationController
     item = find_menu_item(params[:id])
     return redirect_to("/order") unless item
 
-    render inertia: "orders/ItemDetail", props: { item: item }
+    render inertia: "orders/ItemDetail", props: { item: item.as_customer_json(image_variant: :detail) }
   end
 
   def cart_review
@@ -38,10 +38,10 @@ class OrdersController < ApplicationController
     return redirect_to("/order") unless item
 
     add_to_cart!(
-      item_id: item[:id],
+      item_id: item.id,
       size_id: params[:size_id],
       addon_ids: Array(params[:addon_ids]),
-      quantity: params[:quantity].to_i.clamp(1, item[:max_quantity])
+      quantity: params[:quantity].to_i.clamp(1, item.max_quantity)
     )
     redirect_to "/order"
   end

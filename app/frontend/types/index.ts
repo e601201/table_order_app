@@ -48,6 +48,22 @@ export type MenuItem = {
   addons: AddonOption[]
 }
 
+// Admin のメニュー管理画面が扱う MenuItem（顧客向け MenuItem に image_url / has_image を加えた形）。
+export type AdminMenuItem = {
+  id: number
+  category: string
+  name: string
+  description: string
+  base_price: number
+  calories: number
+  recommended: boolean
+  max_quantity: number
+  sizes: SizeOption[]
+  addons: AddonOption[]
+  image_url: string
+  has_image: boolean
+}
+
 export type CartLine = {
   line_id: string
   item_id: number

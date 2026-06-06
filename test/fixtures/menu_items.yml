@@ -1,0 +1,34 @@
+# jsonb 列（sizes / addons）はネストした YAML をそのまま格納する。
+classic_burger:
+  category: burgers
+  name: クラシックバーガー
+  description: テスト用バーガー
+  base_price: 580
+  calories: 620
+  recommended: true
+  max_quantity: 10
+  sizes:
+    - id: regular
+      label: レギュラー
+      extra: 0
+    - id: large
+      label: ラージ
+      extra: 100
+  addons:
+    - id: cheese
+      label: チーズ追加
+      extra: 50
+
+cola:
+  category: drinks
+  name: コーラ
+  description: テスト用ドリンク
+  base_price: 220
+  calories: 140
+  recommended: false
+  max_quantity: 20
+  sizes:
+    - id: regular
+      label: ミディアム
+      extra: 0
+  addons: []
