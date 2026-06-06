@@ -148,3 +148,33 @@ export type CashierOrder = {
   payment_method: PaymentMethod | null
   items: CashierOrderItem[]
 }
+
+// Admin 注文管理（閲覧専用 ADR-0005）。一覧行は明細を件数とサマリ文字列に集約する。
+export type AdminOrderRow = {
+  id: number
+  order_number: string
+  table_number: number | null
+  order_type: OrderType
+  status: KitchenOrderStatus
+  payment_status: PaymentStatus
+  total: number
+  placed_at: string
+  item_count: number
+  items_summary: string
+}
+
+// 詳細は行情報に全明細・金額内訳・支払い情報を加えた形。
+export type AdminOrderDetail = AdminOrderRow & {
+  subtotal: number
+  tax: number
+  paid_at: string | null
+  payment_method: PaymentMethod | null
+  items: CashierOrderItem[]
+}
+
+export type AdminOrderStats = {
+  orders_count: number
+  in_progress_count: number
+  sales_total: number
+  awaiting_payment_count: number
+}

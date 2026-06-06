@@ -22,6 +22,7 @@ Rails.application.routes.draw do
   namespace :admin do
     resources :staffs, only: %i[index new create edit update destroy]
     resources :menu_items, only: %i[index new create edit update destroy]
+    resources :orders, only: %i[index show] # 閲覧専用の注文管理（ADR-0005）
   end
 
   # for POC: Kitchen dashboard

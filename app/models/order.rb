@@ -17,6 +17,11 @@ class Order < ApplicationRecord
                 .order(placed_at: :desc)
   }
 
+  # Admin 注文管理（ADR-0005）が使う日次俯瞰スコープ。
+  scope :placed_today, -> { where(placed_at: Time.zone.today.all_day) }
+  # 会計待ち = 提供済み（Served）かつ未会計（Unpaid）。レジ作業キューと同義。
+  scope :awaiting_payment, -> { completed.where(paid_at: nil) }
+
   def paid?
     paid_at.present?
   end
