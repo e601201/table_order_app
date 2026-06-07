@@ -26,3 +26,11 @@ Admin に `/admin/orders` を追加し、**本日の全 `Order` を閲覧専用�
 ## 更新（2026-06-07）
 
 `AdminLayout` の `店舗管理`（`stores`）ナビ項目と `Store` アイコン import を削除した。複数店舗（Store）が今回スコープ対象外で確定し、`enabled: false` の無効ナビが「近日実装」を誤って示唆するのを避けるため。本文 Considered Options / Consequences の「`enabled: false` のまま据え置く」「引き続き `enabled: false`」は、`店舗管理` に関してはこの追記で上書きされる（`売上レポート` / `ダッシュボード` / `設定` は引き続き `enabled: false` で据え置き）。Store/Shop を却下するという判断自体は不変で、`CONTEXT.md` の「there is no Store/Shop concept」も有効。
+
+## 更新（2026-06-07）— Admin ダッシュボード新設と admin ホーム移動
+
+`/admin/dashboard`（`Admin::DashboardController#index` → `admin/Dashboard`、`require_login!` ＋ `authorize_roles!(:admin)`）を新設し、`AdminLayout` の `dashboard` ナビ項目を `enabled: true, href: '/admin/dashboard'` に反転した。直前の更新「`ダッシュボード` は引き続き `enabled: false`」は `ダッシュボード` に関して本追記で上書きされる（`売上レポート` / `設定` は引き続き `enabled: false`）。
+
+- ダッシュボードは**各管理画面・スタッフ画面への導線（リンク）のみ**のハブとし、集計（注文数 / 調理中 / 売上 / 未会計）は**意図的に載せない**。`/admin/orders` と表示が重複するため。必要になれば後から `order_stats` を再掲する余地は残す（実装漏れではなく先送り）。
+- admin のホーム（`staff_home_path`）を `admin_staffs_path` から `admin_dashboard_path` に移動した。ログイン後の着地・ログイン済み再訪・権限エラー時の戻り先がすべてダッシュボードに統一される（`sessions_controller_test` のログイン遷移先アサートも更新）。
+- あわせて admin 専用の画面切り替えナビ（`StaffSurfaceNav`：キッチン / レジ / 管理者）を3つのスタッフ画面（`/kitchen` / `/cashier` / 管理者コンソール）のヘッダーに常駐させ、現在地はハイライト＋無効化、非 admin・未ログインでは非表示とした。これは ADR-0002 の既定「Admin が全画面アクセス」の UI 実装であり、バックエンドの認可（Kitchen/Cashier は admin も許可、`/admin/*` は admin 限定）は不変なので新規 ADR は起こさない。

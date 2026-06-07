@@ -14,7 +14,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
   test "正しい認証情報でログインでき、ロールのホームへ遷移する" do
     post login_path, params: { login_id: "admin1", password: "password" }
-    assert_redirected_to admin_staffs_path
+    assert_redirected_to admin_dashboard_path
     assert_equal "ログインしました", flash[:notice]
   end
 

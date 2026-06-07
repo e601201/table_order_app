@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import FlashMessage from '@/components/FlashMessage'
+import StaffSurfaceNav from '@/components/StaffSurfaceNav'
 import { roleMeta } from '@/lib/staffRole'
 import type { SharedProps } from '@/types'
 
@@ -21,7 +22,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
   {
     title: '運営管理',
     items: [
-      { key: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, enabled: false },
+      { key: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, enabled: true, href: '/admin/dashboard' },
       { key: 'orders', label: '注文管理', icon: ShoppingBag, enabled: true, href: '/admin/orders' },
       { key: 'menu', label: 'メニュー管理', icon: Utensils, enabled: true, href: '/admin/menu_items' },
       { key: 'staffs', label: 'スタッフ管理', icon: Users, enabled: true, href: '/admin/staffs' },
@@ -144,17 +145,20 @@ export default function AdminLayout({
             <ChevronRight size={14} color={colors.textSecondary} />
             <span style={{ color: colors.textPrimary, fontWeight: 600 }}>{breadcrumb}</span>
           </div>
-          {staff && (
-            <button
-              type="button"
-              onClick={() => router.delete('/logout')}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5"
-              style={{ fontSize: 13, fontWeight: 600, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
-            >
-              <LogOut size={15} />
-              ログアウト
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            <StaffSurfaceNav current="admin" tone="light" />
+            {staff && (
+              <button
+                type="button"
+                onClick={() => router.delete('/logout')}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5"
+                style={{ fontSize: 13, fontWeight: 600, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
+              >
+                <LogOut size={15} />
+                ログアウト
+              </button>
+            )}
+          </div>
         </header>
 
         {/* コンテンツエリア */}

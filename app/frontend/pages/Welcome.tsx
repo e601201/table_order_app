@@ -43,16 +43,10 @@ export default function Welcome({ app_name }: WelcomeProps) {
             </h2>
             <div className="flex flex-col gap-3">
               <Link
-                href="/kitchen"
+                href="/login"
                 className="block w-full text-center px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-800 font-medium shadow-sm hover:bg-gray-50 transition"
               >
-                キッチン
-              </Link>
-              <Link
-                href="/cashier"
-                className="block w-full text-center px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-800 font-medium shadow-sm hover:bg-gray-50 transition"
-              >
-                レジ
+                ログイン画面
               </Link>
             </div>
           </section>

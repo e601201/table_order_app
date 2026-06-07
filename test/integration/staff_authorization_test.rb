@@ -70,12 +70,19 @@ class StaffAuthorizationTest < ActionDispatch::IntegrationTest
 
   test "admin は全スタッフ画面にアクセスできる" do
     login_as(:admin_staff)
+    get admin_dashboard_path
+    assert_response :success
     get kitchen_path
     assert_response :success
     get cashier_path
     assert_response :success
     get admin_staffs_path
     assert_response :success
+  end
+
+  test "admin はログイン後ダッシュボードへ遷移する" do
+    login_as(:admin_staff)
+    assert_redirected_to admin_dashboard_path
   end
 
   private

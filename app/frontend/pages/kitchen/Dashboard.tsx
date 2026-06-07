@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ChefHat, LayoutList, CircleCheck, Clock, Flame, Check, Bell, LogOut } from 'lucide-react'
 import FlashMessage from '@/components/FlashMessage'
+import StaffSurfaceNav from '@/components/StaffSurfaceNav'
 import type { KitchenOrder, KitchenOrderStatus, OrdersByStatus } from '@/types'
 
 // --- ステータス設定 ---
@@ -310,6 +311,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 20, fontWeight: 700, color: '#0a0a0a', letterSpacing: -0.5 }}>
               {timeLabel}
             </span>
+            <StaffSurfaceNav current="kitchen" tone="light" />
             <button
               type="button"
               onClick={() => router.delete('/logout')}

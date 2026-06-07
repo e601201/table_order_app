@@ -33,12 +33,12 @@ module StaffAuthentication
     redirect_to staff_home_path(current_staff), alert: "権限がありません"
   end
 
-  # ロールごとのホーム画面。Admin の起点は Staff 管理画面。
+  # ロールごとのホーム画面。Admin の起点はダッシュボード（各画面への入口ハブ）。
   def staff_home_path(staff)
     case staff&.role
     when "kitchen" then kitchen_path
     when "cashier" then cashier_path
-    when "admin"   then admin_staffs_path
+    when "admin"   then admin_dashboard_path
     else login_path
     end
   end

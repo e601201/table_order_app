@@ -18,8 +18,9 @@ Rails.application.routes.draw do
   post   "login",  to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
 
-  # 管理画面（Admin のみ）— Staff 管理 / Menu 管理（一覧・新規登録・編集・削除）
+  # 管理画面（Admin のみ）— ダッシュボード / Staff 管理 / Menu 管理（一覧・新規登録・編集・削除）
   namespace :admin do
+    get "dashboard", to: "dashboard#index" # 管理者コンソールの入口ハブ（導線のみ）
     resources :staffs, only: %i[index new create edit update destroy]
     resources :menu_items, only: %i[index new create edit update destroy]
     resources :orders, only: %i[index show] # 閲覧専用の注文管理（ADR-0005）

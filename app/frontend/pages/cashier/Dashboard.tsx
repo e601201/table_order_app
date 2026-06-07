@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useMemo, useState } from 'react'
 import { Search, RefreshCw, CreditCard, X, ChefHat, LogOut } from 'lucide-react'
+import StaffSurfaceNav from '@/components/StaffSurfaceNav'
 import FlashMessage from '@/components/FlashMessage'
 import type { CashierOrder, PaymentStatus } from '@/types'
 
@@ -311,6 +312,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
             <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: 16, fontWeight: 700, color: '#fafafa' }}>
               {timeLabel}
             </span>
+            <StaffSurfaceNav current="cashier" tone="dark" />
             <button
               type="button"
               onClick={() => router.delete('/logout')}
