@@ -127,6 +127,8 @@ _Avoid_: "Order completed" (clashes with the everyday-Japanese "完了"), order-
 
 **"通知" (notification)** is reserved for *events being propagated*, not for the UI affordance that makes them visible. "キッチンに通知する" means "raise `OrderPlaced` such that the kitchen receives it"; whether that surfaces as an auto-refresh, a sound, or a manual reload is a separate UI concern.
 
+**"客単価" vs "平均注文単価"** — "客単価" literally means spend per `Customer` (per 人), which would require knowing how many `Customer`s an `Order` represents. The system has no such identity (no `party_size` / `cover` / `customer_id`), so a true per-`Customer` average cannot be computed. The admin metric is per-`Order`, not per-person, and is named **平均注文単価** (average order value). Never call it "客単価" — that would imply the missing per-person denominator and collide with the canonical "客" (the unauthenticated `Customer`, a person, not a divisor).
+
 ## Example dialogue
 
 A walk-through of a typical evening flow between a developer (D) and the operations manager (M).
