@@ -27,13 +27,13 @@ The role that advances the payment axis (`Unpaid → Paid`). Works against the q
 _Avoid_: Register, checkout, 会計係, 会計スタッフ, 会計 (the **role** name is "レジ"; "会計" is reserved for the act of settling — see the Flagged ambiguities)
 
 **Admin** (canonical Japanese: **管理者**):
-A `Staff` role for system administration rather than `Order` operation. Unlike `Kitchen` and `Cashier`, it advances neither order axis. Conceptually an `Admin` may manage `Staff` accounts, manage the `Menu`, and reach every staff surface — though only `Staff` account management and login are built today (Menu management remains a future capability; the `Menu` is still a static constant).
+A `Staff` role for system administration rather than `Order` operation. Unlike `Kitchen` and `Cashier`, it advances neither order axis. Conceptually an `Admin` may manage `Staff` accounts, manage the `Menu`, and reach every staff surface. Today an `Admin` can manage `Staff` accounts, log in, and manage the `Menu` (create / edit / delete `MenuItem`s, including images) via `/admin/menu_items` (ADR-0004).
 _Avoid_: Superuser, root, owner, オーナー, 店長
 
 ### Menu
 
 **Menu**:
-The catalog of all `MenuItem`s currently offered. Today it is a static constant (`MENU_ITEMS` in `MenuCatalog`); the customer reads it via `/order`. The kitchen does not interact with the Menu — only with the `Line`s that resulted from customer selections.
+The catalog of all `MenuItem`s currently offered. It is stored in the `menu_items` table and managed by an `Admin` (ADR-0004); the customer reads it via `/order`. The kitchen does not interact with the Menu — only with the `Line`s that resulted from customer selections.
 _Avoid_: Catalog (acceptable in casual conversation, but the canonical name is "Menu")
 
 **MenuItem**:

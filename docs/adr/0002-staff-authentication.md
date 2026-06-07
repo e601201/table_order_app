@@ -16,4 +16,4 @@ status: accepted
 ## Consequences
 
 - ロールを跨いだアクセス（例: Kitchen が `/cashier`）は自ロールのホームへリダイレクト + flash で弾く。専用 403 ページは作らない。
-- Menu 管理は Admin の概念上の責務だが今回は未実装（`Menu` は静的定数のまま）。DB 化は別 ADR に委ねる。
+- Menu 管理は Admin の概念上の責務であり、本 ADR 時点では未実装だった（`Menu` は静的定数のまま）。その後 ADR-0004 で DB 化し、Admin が管理画面から CRUD できるようにして解決済み。
