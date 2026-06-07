@@ -4,7 +4,6 @@ import {
   ShoppingBag,
   Utensils,
   Users,
-  Store,
   TrendingUp,
   Settings,
   ChevronRight,
@@ -26,7 +25,6 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { key: 'orders', label: '注文管理', icon: ShoppingBag, enabled: true, href: '/admin/orders' },
       { key: 'menu', label: 'メニュー管理', icon: Utensils, enabled: true, href: '/admin/menu_items' },
       { key: 'staffs', label: 'スタッフ管理', icon: Users, enabled: true, href: '/admin/staffs' },
-      { key: 'stores', label: '店舗管理', icon: Store, enabled: false },
     ],
   },
   {

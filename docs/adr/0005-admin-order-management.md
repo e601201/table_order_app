@@ -22,3 +22,7 @@ Admin に `/admin/orders` を追加し、**本日の全 `Order` を閲覧専用�
 - `AdminLayout` の `orders` ナビ項目を `enabled: true, href: '/admin/orders'` に切り替える。`店舗管理` / `売上レポート` / `ダッシュボード` / `設定` は引き続き `enabled: false`。
 - `CONTEXT.md` の Admin 定義に「`/admin/orders` で本日の Order を閲覧監視（両軸・合計を見るだけで軸は進めない）」を追記済み。Store 概念なし・キャンセル状態なしも本 ADR に紐づけて明記した。
 - 将来 Admin にオーダー介入（強制遷移・キャンセル・払い戻し）や複数店舗・期間レポートが必要になった場合は、本 ADR の「意図的な不採用」を覆す形で別 ADR を起こす。実装漏れではなく決定であることに注意。
+
+## 更新（2026-06-07）
+
+`AdminLayout` の `店舗管理`（`stores`）ナビ項目と `Store` アイコン import を削除した。複数店舗（Store）が今回スコープ対象外で確定し、`enabled: false` の無効ナビが「近日実装」を誤って示唆するのを避けるため。本文 Considered Options / Consequences の「`enabled: false` のまま据え置く」「引き続き `enabled: false`」は、`店舗管理` に関してはこの追記で上書きされる（`売上レポート` / `ダッシュボード` / `設定` は引き続き `enabled: false` で据え置き）。Store/Shop を却下するという判断自体は不変で、`CONTEXT.md` の「there is no Store/Shop concept」も有効。
