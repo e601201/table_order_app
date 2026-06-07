@@ -94,3 +94,87 @@ end
 # 明示 id で投入したため、sequence を次の値（最大 id + 1）にリセットする。
 ActiveRecord::Base.connection.reset_pk_sequence!("menu_items")
 puts "Menu を #{MenuItem.count} 件シードしました"
+
+# Admin 統計ダッシュボード（ADR-0005）の動作確認用デモ注文。dev のみ。
+# 日付は実行日基準（過去7日／前日／本日）で散らす。再実行時は接頭辞付きのみ作り直し、
+# 実データ・本番には触れない。KPI=本日 paid 売上 / placed 注文数 / 平均注文単価＋前日比、
+# 売上推移=paid×paid_at の7日、人気メニュー=本日 placed の Σquantity、最近の注文=本日 desc。
+if Rails.env.development?
+  Order.where("order_number LIKE ?", "#DEMO-%").destroy_all
+
+  # menu_item_id => [ 商品名（order_items.name はスナップショット）, 単価 ]
+  catalog = {
+    1 => [ "クラシックバーガー", 580 ],
+    2 => [ "ダブルチーズ", 780 ],
+    3 => [ "フィッシュバーガー", 600 ],
+    4 => [ "クリスピーフライ", 320 ],
+    5 => [ "チーズフライ", 380 ],
+    6 => [ "アイスレモンティー", 250 ],
+    7 => [ "コーラ", 220 ],
+    8 => [ "キッズミール", 490 ]
+  }
+
+  demo_seq = 0
+  build_demo_order = lambda do |placed_at:, status:, lines:, paid_at: nil, table_number: nil|
+    demo_seq += 1
+    subtotal = lines.sum { |id, qty| catalog.fetch(id)[1] * qty }
+    tax = (subtotal * 0.1).round
+    order = Order.create!(
+      order_number: format("#DEMO-%03d", demo_seq),
+      order_type: table_number ? :in_store : :takeout,
+      table_number: table_number,
+      status: status,
+      subtotal: subtotal,
+      tax: tax,
+      total: subtotal + tax,
+      placed_at: placed_at,
+      paid_at: paid_at,
+      payment_method: paid_at ? "cash" : nil
+    )
+    lines.each do |id, qty|
+      name, price = catalog.fetch(id)
+      order.order_items.create!(
+        menu_item_id: id, name: name, quantity: qty,
+        unit_price: price, line_total: price * qty, size_label: "レギュラー", addons: []
+      )
+    end
+    order
+  end
+
+  # 日付は実行日（Time.zone.today）基準で固定する。now 相対のオフセットは日跨ぎで
+  # 集計母集団が揺れるため使わない（ダッシュボードも同じ today を見るので必ず整合する）。
+  today = Time.zone.today
+  day_at = ->(date, hour) { date.in_time_zone.change(hour: hour) }
+
+  # 売上推移（6〜2日前）: 会計済み注文を paid_at で日割り。バー高さが変わるよう金額を散らす。
+  {
+    6 => [ [ 1, 2 ], [ 4, 1 ] ],
+    5 => [ [ 2, 1 ], [ 7, 2 ] ],
+    4 => [ [ 1, 1 ], [ 3, 1 ], [ 6, 1 ] ],
+    3 => [ [ 2, 2 ], [ 5, 1 ] ],
+    2 => [ [ 8, 2 ], [ 7, 1 ] ]
+  }.each do |days_ago, lines|
+    at = day_at.call(today - days_ago, 12)
+    build_demo_order.call(placed_at: at, paid_at: at, status: :completed, table_number: 5, lines: lines)
+  end
+
+  # 前日（前日比の分母＋7日トレンドの前日バー）: 会計済み3件。
+  yday = today - 1
+  build_demo_order.call(placed_at: day_at.call(yday, 12), paid_at: day_at.call(yday, 12), status: :completed, table_number: 3, lines: [ [ 1, 1 ], [ 7, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(yday, 12), paid_at: day_at.call(yday, 12), status: :completed, table_number: 6, lines: [ [ 2, 2 ] ])
+  build_demo_order.call(placed_at: day_at.call(yday, 13), paid_at: day_at.call(yday, 13), status: :completed, table_number: 8, lines: [ [ 5, 1 ], [ 6, 2 ] ])
+
+  # 本日・会計済み（KPI 売上／平均注文単価／本日トレンドバー）。
+  build_demo_order.call(placed_at: day_at.call(today, 9), paid_at: day_at.call(today, 9), status: :completed, table_number: 1, lines: [ [ 1, 2 ], [ 7, 2 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 10), paid_at: day_at.call(today, 10), status: :completed, table_number: 2, lines: [ [ 2, 1 ], [ 4, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 11), paid_at: day_at.call(today, 11), status: :completed, lines: [ [ 8, 1 ], [ 6, 1 ] ]) # テイクアウト
+
+  # 本日・未会計（注文数・人気メニューには入るが売上には入らない。最近の注文で2バッジを確認）。
+  # 後ろの時刻ほど新しいため、未会計（多様な調理状態）が「最近の注文」上位に並ぶ。
+  build_demo_order.call(placed_at: day_at.call(today, 12), status: :pending, table_number: 4, lines: [ [ 3, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 13), status: :in_progress, table_number: 7, lines: [ [ 1, 1 ], [ 5, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 14), status: :ready, table_number: 9, lines: [ [ 2, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 15), status: :completed, table_number: 10, lines: [ [ 6, 3 ] ]) # 提供済み・未会計（会計待ち）
+
+  puts "デモ注文を #{Order.where('order_number LIKE ?', '#DEMO-%').count} 件シードしました（dev のみ）"
+end
