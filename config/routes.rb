@@ -18,9 +18,10 @@ Rails.application.routes.draw do
   post   "login",  to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
 
-  # 管理画面（Admin のみ）— Staff 管理（一覧・新規登録・編集・削除）
+  # 管理画面（Admin のみ）— Staff 管理 / Menu 管理（一覧・新規登録・編集・削除）
   namespace :admin do
     resources :staffs, only: %i[index new create edit update destroy]
+    resources :menu_items, only: %i[index new create edit update destroy]
   end
 
   # for POC: Kitchen dashboard

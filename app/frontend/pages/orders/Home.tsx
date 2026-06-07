@@ -1,14 +1,8 @@
 import { Head, Link } from '@inertiajs/react'
 import { useMemo, useState } from 'react'
 import { ShoppingCart, Flame, Star } from 'lucide-react'
+import { orderedCategories, categoryLabel, categoryEmoji } from '@/lib/menuCategory'
 import type { MenuItem, OrderType } from '@/types'
-
-const categories = [
-  { id: 'burgers', label: 'バーガー', emoji: '🍔' },
-  { id: 'sides', label: 'サイド', emoji: '🍟' },
-  { id: 'drinks', label: 'ドリンク', emoji: '🥤' },
-  { id: 'kids', label: 'キッズ', emoji: '🧒' },
-]
 
 interface OrderHomeProps {
   table_number: number | null
@@ -37,8 +31,7 @@ export default function OrderHome({
     [menu_items, activeCategory],
   )
 
-  const activeCategoryLabel =
-    categories.find((c) => c.id === activeCategory)?.label ?? 'メニュー'
+  const activeCategoryLabel = categoryLabel(activeCategory)
 
   return (
     <>
@@ -70,18 +63,18 @@ export default function OrderHome({
         <div className="pt-4 md:pt-5 pb-20 md:pb-24 flex flex-col gap-5 md:gap-6">
           {/* Category Tabs */}
           <div className="flex gap-2 md:gap-2.5 px-4 md:px-6 overflow-x-auto scrollbar-hide">
-            {categories.map((cat) => (
+            {orderedCategories.map((id) => (
               <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
+                key={id}
+                onClick={() => setActiveCategory(id)}
                 className={`flex items-center gap-1.5 md:gap-2 px-4 py-2 md:px-5 md:py-2.5 rounded-full text-[13px] md:text-sm font-semibold whitespace-nowrap transition-colors ${
-                  activeCategory === cat.id
+                  activeCategory === id
                     ? 'bg-[#E53935] text-white'
                     : 'bg-[#FFF3E0] text-[#6D5D4B] border border-[#F0E0D0]'
                 }`}
               >
-                <span className="text-sm md:text-base">{cat.emoji}</span>
-                {cat.label}
+                <span className="text-sm md:text-base">{categoryEmoji(id)}</span>
+                {categoryLabel(id)}
               </button>
             ))}
           </div>

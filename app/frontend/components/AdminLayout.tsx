@@ -15,8 +15,8 @@ import FlashMessage from '@/components/FlashMessage'
 import { roleMeta } from '@/lib/staffRole'
 import type { SharedProps } from '@/types'
 
-// サイドバー項目。現状スタッフ管理のみ実装済み。未実装はグレーアウト・クリック不可（ADR 0002）。
-type NavItem = { key: string; label: string; icon: LucideIcon; enabled: boolean }
+// サイドバー項目。実装済み項目は href を持つ。未実装はグレーアウト・クリック不可（ADR 0002）。
+type NavItem = { key: string; label: string; icon: LucideIcon; enabled: boolean; href?: string }
 
 const navSections: { title: string; items: NavItem[] }[] = [
   {
@@ -24,8 +24,8 @@ const navSections: { title: string; items: NavItem[] }[] = [
     items: [
       { key: 'dashboard', label: 'ダッシュボード', icon: LayoutDashboard, enabled: false },
       { key: 'orders', label: '注文管理', icon: ShoppingBag, enabled: false },
-      { key: 'menu', label: 'メニュー管理', icon: Utensils, enabled: false },
-      { key: 'staffs', label: 'スタッフ管理', icon: Users, enabled: true },
+      { key: 'menu', label: 'メニュー管理', icon: Utensils, enabled: true, href: '/admin/menu_items' },
+      { key: 'staffs', label: 'スタッフ管理', icon: Users, enabled: true, href: '/admin/staffs' },
       { key: 'stores', label: '店舗管理', icon: Store, enabled: false },
     ],
   },
@@ -55,7 +55,7 @@ function SidebarItem({ item, active }: { item: NavItem; active: boolean }) {
     <button
       type="button"
       disabled={!item.enabled}
-      onClick={item.enabled ? () => router.visit('/admin/staffs') : undefined}
+      onClick={item.enabled && item.href ? () => router.visit(item.href!) : undefined}
       className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left"
       style={{
         backgroundColor: active ? colors.active : 'transparent',
@@ -121,24 +121,15 @@ export default function AdminLayout({
           ))}
         </nav>
 
-        {/* スタッフ情報 + ログアウト */}
+        {/* スタッフ情報（ログアウトはヘッダー右上のボタンに統一） */}
         {staff && (
-          <div className="flex items-center justify-between gap-2 px-4 py-3" style={{ borderTop: `1px solid ${colors.border}` }}>
+          <div className="flex items-center gap-2 px-4 py-3" style={{ borderTop: `1px solid ${colors.border}` }}>
             <div className="min-w-0">
               <p className="truncate" style={{ fontSize: 13, fontWeight: 600, color: colors.textPrimary }}>
                 {staff.name}
               </p>
               <p style={{ fontSize: 12, color: roleMeta[staff.role].color }}>{roleMeta[staff.role].label}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => router.delete('/logout')}
-              title="ログアウト"
-              className="flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5"
-              style={{ fontSize: 12, fontWeight: 600, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
-            >
-              <LogOut size={14} />
-            </button>
           </div>
         )}
       </aside>
@@ -147,7 +138,7 @@ export default function AdminLayout({
       <div className="flex min-w-0 flex-1 flex-col" style={{ backgroundColor: colors.bg }}>
         {/* トップバー（パンくず） */}
         <header
-          className="flex h-16 shrink-0 items-center px-6"
+          className="flex h-16 shrink-0 items-center justify-between px-6"
           style={{ borderBottom: `1px solid ${colors.border}` }}
         >
           <div className="flex items-center gap-2" style={{ fontSize: 13 }}>
@@ -155,6 +146,17 @@ export default function AdminLayout({
             <ChevronRight size={14} color={colors.textSecondary} />
             <span style={{ color: colors.textPrimary, fontWeight: 600 }}>{breadcrumb}</span>
           </div>
+          {staff && (
+            <button
+              type="button"
+              onClick={() => router.delete('/logout')}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5"
+              style={{ fontSize: 13, fontWeight: 600, color: colors.textSecondary, border: `1px solid ${colors.border}` }}
+            >
+              <LogOut size={15} />
+              ログアウト
+            </button>
+          )}
         </header>
 
         {/* コンテンツエリア */}
