@@ -178,3 +178,33 @@ export type AdminOrderStats = {
   sales_total: number
   awaiting_payment_count: number
 }
+
+// Admin 統計ダッシュボード（ADR-0005 更新）。KPI 値と前日比%。分母0/paid0件は value/change_pct が null（フロントは「—」）。
+export type DashboardKpi = {
+  value: number | null
+  change_pct: number | null
+}
+
+// 売上推移の1点。amount は paid 注文の total を paid_at で日割りした日次合計。
+export type DashboardSalesTrendPoint = {
+  date: string
+  label: string
+  amount: number
+}
+
+// 人気メニュー1行。quantity は order_items.name 単位の数量合計（販売数）。
+export type DashboardPopularItem = {
+  name: string
+  quantity: number
+}
+
+export type AdminDashboardData = {
+  kpi: {
+    sales: DashboardKpi
+    orders: DashboardKpi
+    average_order_value: DashboardKpi
+  }
+  sales_trend: DashboardSalesTrendPoint[]
+  popular_items: DashboardPopularItem[]
+  recent_orders: AdminOrderRow[]
+}

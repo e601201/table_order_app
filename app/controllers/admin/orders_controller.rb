@@ -2,6 +2,8 @@ module Admin
   # 閲覧専用の注文管理（ADR-0005）。Admin は本日の全注文を俯瞰・詳細閲覧できるが、
   # 二軸（調理進捗 / 支払い）の遷移は行わない。それらは Kitchen / Cashier が所有する。
   class OrdersController < ApplicationController
+    include Admin::OrderRows
+
     before_action :require_login!
     before_action -> { authorize_roles!(:admin) }
 
@@ -35,22 +37,6 @@ module Admin
       }
     end
 
-    # 一覧行。明細は件数とサマリ文字列に集約し、ペイロードを小さく保つ。
-    def serialize_row(order)
-      {
-        id: order.id,
-        order_number: order.order_number,
-        table_number: order.table_number,
-        order_type: order.order_type,
-        status: order.status,
-        payment_status: order.payment_status,
-        total: order.total,
-        placed_at: order.placed_at.iso8601,
-        item_count: order.order_items.sum(&:quantity),
-        items_summary: items_summary(order.order_items)
-      }
-    end
-
     # 詳細。行の情報に加えて全明細と金額内訳・支払い情報を含める。
     def serialize_detail(order)
       serialize_row(order).merge(
@@ -72,18 +58,6 @@ module Admin
         size_label: item.size_label,
         addons: item.addons
       }
-    end
-
-    # 例: 単品 "テリヤキバーガー ×2" / 複数 "カフェラテ, チーズケーキ"。
-    def items_summary(items)
-      return "" if items.empty?
-
-      if items.one?
-        item = items.first
-        item.quantity > 1 ? "#{item.name} ×#{item.quantity}" : item.name
-      else
-        items.map(&:name).join(", ")
-      end
     end
   end
 end
