@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react'
-import { Check, Home, Clock, CreditCard } from 'lucide-react'
+import { Check, Home, CreditCard } from 'lucide-react'
 import type { PlacedOrder } from '@/types'
 
 interface OrderCompleteProps {
@@ -38,17 +38,6 @@ export default function OrderComplete({ order }: OrderCompleteProps) {
               {order_number}
             </span>
             <span className="text-xs font-semibold text-[#6D5D4B]">{locationLabel}</span>
-          </div>
-
-          {/* Prep Time Card */}
-          <div className="flex items-center gap-3 w-full rounded-2xl bg-[#FFF8E1] border-[1.5px] border-[#FFB300] px-3.5 py-2">
-            <Clock className="w-6 h-6 text-[#FB8C00] shrink-0" />
-            <div className="flex flex-col gap-px">
-              <span className="text-[11px] font-medium text-[#6D5D4B]">
-                調理時間の目安
-              </span>
-              <span className="text-base font-bold text-[#1A1210]">10〜15分</span>
-            </div>
           </div>
         </div>
 

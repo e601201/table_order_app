@@ -129,6 +129,9 @@ _Avoid_: "Order completed" (clashes with the everyday-Japanese "完了"), order-
 
 **"客単価" vs "平均注文単価"** — "客単価" literally means spend per `Customer` (per 人), which would require knowing how many `Customer`s an `Order` represents. The system has no such identity (no `party_size` / `cover` / `customer_id`), so a true per-`Customer` average cannot be computed. The admin metric is per-`Order`, not per-person, and is named **平均注文単価** (average order value). Never call it "客単価" — that would imply the missing per-person denominator and collide with the canonical "客" (the unauthenticated `Customer`, a person, not a divisor).
 
+**"調理時間の目安" (cook-time estimate)** — The `注文完了` (`OrderComplete`) screen is shown to the `Customer` immediately after `Checkout` and **before** `Settlement`. Cooking ("preparing") happens only on the kitchen axis `In progress → Ready`, which begins after payment ("お支払い確認後に調理を開始します"). Therefore the `注文完了` screen makes **no cook-time promise**: any duration shown there would count from a moment when zero cooking has happened, across an unbounded gap (walking to the `Cashier`, the queue, `Settlement`, kitchen backlog). There is also no `prep_time` data on `MenuItem`, and **no customer-facing surface after payment** — the only post-payment screen, `cashier/payment_complete`, is a `Cashier` terminal the `Customer` never sees. `注文完了` is itself an instance of the `完了` overload above: it means "Checkout is done," not `Served` and not `Paid`. See ADR-0006.
+_Avoid_: showing an ETA / 分数 on `注文完了`; treating `cashier/payment_complete` as a customer-facing home for a cook-time estimate.
+
 ## Example dialogue
 
 A walk-through of a typical evening flow between a developer (D) and the operations manager (M).
