@@ -56,58 +56,92 @@ class OrdersController < ApplicationController
     redirect_to "/order/cart"
   end
 
+  # Checkout = `OrderPlaced` 書き込み境界（ADR-0007）。Cart の Line をここで
+  # 永続 Order / OrderItem に書き出す。客が完了画面に到達しなくても注文は残り、
+  # キッチンキューに現れる。order_number は採番＋INSERT を同一トランザクションに
+  # 包み、当日キーの advisory lock で直列化する（Order.next_order_number 参照）。
   def checkout
     lines = cart_lines
     return redirect_to("/order/cart") if lines.empty?
 
-    session[:last_order] = {
-      order_number: "#A-#{rand(1000..9999)}",
-      table_number: table_number,
-      order_type: order_type,
-      items: lines,
-      totals: cart_totals(lines),
-      placed_at: Time.current.iso8601
-    }
-    clear_cart
-    redirect_to "/order/complete"
-  end
-
-  def order_complete
-    last = session.delete(:last_order)
-    return redirect_to("/order") unless last
-
-    Order.transaction do
-      # 注文番号がすでに存在する場合は、注文を作成しない。
-      order = Order.find_or_create_by!(order_number: last["order_number"] || last[:order_number]) do |o|
-        o.order_type   = last["order_type"]   || last[:order_type] || "in_store"
-        o.table_number = last["table_number"] || last[:table_number]
-        o.subtotal     = last.dig("totals", "subtotal") || last.dig(:totals, :subtotal)
-        o.tax          = last.dig("totals", "tax")      || last.dig(:totals, :tax)
-        o.total        = last.dig("totals", "total")    || last.dig(:totals, :total)
-        o.placed_at    = last["placed_at"] || last[:placed_at]
+    totals = cart_totals(lines)
+    order = Order.transaction do
+      new_order = Order.create!(
+        order_number: Order.next_order_number,
+        order_type:   order_type,
+        table_number: table_number,
+        subtotal:     totals[:subtotal],
+        tax:          totals[:tax],
+        total:        totals[:total],
+        placed_at:    Time.current
+      )
+      lines.each do |line|
+        new_order.order_items.create!(
+          menu_item_id: line[:item_id],
+          name:         line[:name],
+          size_id:      line[:size_id],
+          size_label:   line[:size_label],
+          addons:       line[:addons],
+          unit_price:   line[:unit_price],
+          quantity:     line[:quantity],
+          line_total:   line[:line_total]
+        )
       end
-
-      # 注文項目が空の場合は、注文項目を作成する。
-      if order.order_items.empty?
-        (last["items"] || last[:items]).each do |line|
-          order.order_items.create!(
-            menu_item_id: line["item_id"]    || line[:item_id],
-            name:         line["name"]       || line[:name],
-            size_id:      line["size_id"]    || line[:size_id],
-            size_label:   line["size_label"] || line[:size_label],
-            addons:       line["addons"]     || line[:addons] || [],
-            unit_price:   line["unit_price"] || line[:unit_price],
-            quantity:     line["quantity"]   || line[:quantity],
-            line_total:   line["line_total"] || line[:line_total]
-          )
-        end
-      end
+      new_order
     end
 
-    render inertia: "orders/OrderComplete", props: { order: last }
+    clear_cart
+    redirect_to "/order/complete/#{order.id}"
+  end
+
+  # 完了画面は永続 Order を :id で読むだけ（副作用なし）。再表示可能。
+  # 備忘録（ADR-0007 / イシュー #29）: :id は連番で列挙可能。将来は session か
+  # 推測不能トークンで「自分の注文だけ」に絞るガードを足す。POC では未ガード。
+  def order_complete
+    order = Order.includes(:order_items).find_by(id: params[:id])
+    return redirect_to("/order") unless order
+
+    render inertia: "orders/OrderComplete", props: { order: serialize_placed_order(order) }
   end
 
   private
+
+  def serialize_placed_order(order)
+    {
+      id:           order.id,
+      order_number: order.display_number,
+      table_number: order.table_number,
+      order_type:   order.order_type,
+      placed_at:    order.placed_at.iso8601,
+      items: order.order_items.map do |item|
+        {
+          id:            item.id,
+          name:          item.name,
+          size_label:    item.size_label,
+          addons:        item.addons,
+          customization: order_item_customization(item),
+          unit_price:    item.unit_price,
+          quantity:      item.quantity,
+          line_total:    item.line_total
+        }
+      end,
+      totals: {
+        subtotal:   order.subtotal,
+        tax:        order.tax,
+        total:      order.total,
+        item_count: order.order_items.sum(&:quantity)
+      }
+    }
+  end
+
+  # 永続 OrderItem の size_label + addon ラベルを " · " 連結（CartSession と対称）。
+  def order_item_customization(item)
+    parts = []
+    parts << item.size_label if item.size_label.present?
+    labels = Array(item.addons).filter_map { |a| a["label"] || a[:label] }
+    parts << labels.join(", ") if labels.any?
+    parts.join(" · ")
+  end
 
   def order_type
     if params[:order_type].present? && Order.order_types.key?(params[:order_type])

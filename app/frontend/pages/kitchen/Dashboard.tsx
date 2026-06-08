@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChefHat, LayoutList, CircleCheck, Clock, Flame, Check, Bell, LogOut } from 'lucide-react'
 import FlashMessage from '@/components/FlashMessage'
 import StaffSurfaceNav from '@/components/StaffSurfaceNav'
@@ -219,6 +219,15 @@ function OrderCard({
 
 export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: OrdersByStatus }) {
   const [activeFilter, setActiveFilter] = useState<'all' | KitchenOrderStatus>('all')
+
+  // 新規注文（OrderPlaced）を手動更新なしで盤面に出す（ADR-0007）。
+  // ポーリングで ordersByStatus のみ部分リロード。Inertia の transport は実装選択（CONTEXT.md）。
+  useEffect(() => {
+    const id = setInterval(() => {
+      router.reload({ only: ['ordersByStatus'] })
+    }, 7000)
+    return () => clearInterval(id)
+  }, [])
 
   const handleAction = (order: KitchenOrder) => {
     const next = nextStatus[order.status]

@@ -88,13 +88,29 @@ export type CartTotals = {
 
 export type OrderType = 'in_store' | 'takeout'
 
+// 完了画面が描画する永続 Order の1明細（ADR-0007）。セッション Cart の CartLine ではなく
+// 永続 OrderItem のスナップショット（line_id ではなく DB の id を持つ）。
+export type PlacedOrderItem = {
+  id: number
+  name: string
+  size_label: string | null
+  addons: AddonOption[]
+  customization: string
+  unit_price: number
+  quantity: number
+  line_total: number
+}
+
+// 完了画面（/order/complete/:id）が読む永続 Order。order_number は客への表示用の
+// 当日連番 NNN（display_number）。
 export type PlacedOrder = {
+  id: number
   order_number: string
   table_number: number | null
   order_type: OrderType
-  items: CartLine[]
-  totals: CartTotals
   placed_at: string
+  items: PlacedOrderItem[]
+  totals: CartTotals
 }
 
 export type KitchenOrderStatus = 'pending' | 'in_progress' | 'ready' | 'completed'

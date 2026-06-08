@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, RefreshCw, CreditCard, X, ChefHat, LogOut } from 'lucide-react'
 import StaffSurfaceNav from '@/components/StaffSurfaceNav'
 import FlashMessage from '@/components/FlashMessage'
@@ -262,6 +262,15 @@ function OrderSummary({
 export default function CashierDashboard({ orders }: { orders: CashierOrder[] }) {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+
+  // 会計待ちキュー（Served + Unpaid）を手動更新なしで最新化（ADR-0007）。
+  // 下部の手動「更新」ボタンは残しつつ、ポーリングで orders のみ部分リロード。
+  useEffect(() => {
+    const id = setInterval(() => {
+      router.reload({ only: ['orders'] })
+    }, 7000)
+    return () => clearInterval(id)
+  }, [])
 
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders
