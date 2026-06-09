@@ -155,26 +155,26 @@ if Rails.env.development?
     2 => [ [ 8, 2 ], [ 7, 1 ] ]
   }.each do |days_ago, lines|
     at = day_at.call(today - days_ago, 12)
-    build_demo_order.call(placed_at: at, paid_at: at, status: :completed, table_number: 5, lines: lines)
+    build_demo_order.call(placed_at: at, paid_at: at, status: :served, table_number: 5, lines: lines)
   end
 
   # 前日（前日比の分母＋7日トレンドの前日バー）: 会計済み3件。
   yday = today - 1
-  build_demo_order.call(placed_at: day_at.call(yday, 12), paid_at: day_at.call(yday, 12), status: :completed, table_number: 3, lines: [ [ 1, 1 ], [ 7, 1 ] ])
-  build_demo_order.call(placed_at: day_at.call(yday, 12), paid_at: day_at.call(yday, 12), status: :completed, table_number: 6, lines: [ [ 2, 2 ] ])
-  build_demo_order.call(placed_at: day_at.call(yday, 13), paid_at: day_at.call(yday, 13), status: :completed, table_number: 8, lines: [ [ 5, 1 ], [ 6, 2 ] ])
+  build_demo_order.call(placed_at: day_at.call(yday, 12), paid_at: day_at.call(yday, 12), status: :served, table_number: 3, lines: [ [ 1, 1 ], [ 7, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(yday, 12), paid_at: day_at.call(yday, 12), status: :served, table_number: 6, lines: [ [ 2, 2 ] ])
+  build_demo_order.call(placed_at: day_at.call(yday, 13), paid_at: day_at.call(yday, 13), status: :served, table_number: 8, lines: [ [ 5, 1 ], [ 6, 2 ] ])
 
   # 本日・会計済み（KPI 売上／平均注文単価／本日トレンドバー）。
-  build_demo_order.call(placed_at: day_at.call(today, 9), paid_at: day_at.call(today, 9), status: :completed, table_number: 1, lines: [ [ 1, 2 ], [ 7, 2 ] ])
-  build_demo_order.call(placed_at: day_at.call(today, 10), paid_at: day_at.call(today, 10), status: :completed, table_number: 2, lines: [ [ 2, 1 ], [ 4, 1 ] ])
-  build_demo_order.call(placed_at: day_at.call(today, 11), paid_at: day_at.call(today, 11), status: :completed, lines: [ [ 8, 1 ], [ 6, 1 ] ]) # テイクアウト
+  build_demo_order.call(placed_at: day_at.call(today, 9), paid_at: day_at.call(today, 9), status: :served, table_number: 1, lines: [ [ 1, 2 ], [ 7, 2 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 10), paid_at: day_at.call(today, 10), status: :served, table_number: 2, lines: [ [ 2, 1 ], [ 4, 1 ] ])
+  build_demo_order.call(placed_at: day_at.call(today, 11), paid_at: day_at.call(today, 11), status: :served, lines: [ [ 8, 1 ], [ 6, 1 ] ]) # テイクアウト
 
   # 本日・未会計（注文数・人気メニューには入るが売上には入らない。最近の注文で2バッジを確認）。
   # 後ろの時刻ほど新しいため、未会計（多様な調理状態）が「最近の注文」上位に並ぶ。
   build_demo_order.call(placed_at: day_at.call(today, 12), status: :pending, table_number: 4, lines: [ [ 3, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 13), status: :in_progress, table_number: 7, lines: [ [ 1, 1 ], [ 5, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 14), status: :ready, table_number: 9, lines: [ [ 2, 1 ] ])
-  build_demo_order.call(placed_at: day_at.call(today, 15), status: :completed, table_number: 10, lines: [ [ 6, 3 ] ]) # 提供済み・未会計（会計待ち）
+  build_demo_order.call(placed_at: day_at.call(today, 15), status: :served, table_number: 10, lines: [ [ 6, 3 ] ]) # 提供済み・未会計（会計待ち）
 
   puts "デモ注文を #{Order.where('order_number LIKE ?', '#DEMO-%').count} 件シードしました（dev のみ）"
 end

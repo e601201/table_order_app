@@ -3,13 +3,16 @@ require "test_helper"
 # order_number の採番（ADR-0007）。保存値は日付プレフィックス付き `YYYYMMDD-NNN` で
 # グローバル一意、客への表示は末尾の当日連番 `NNN`。連番は暦日（`all_day` 規約）で当日件数+1。
 class OrderTest < ActiveSupport::TestCase
-  def create_order(order_number:, placed_at:, order_type: :in_store, table_number: 5)
+  def create_order(order_number:, placed_at:, order_type: :in_store, table_number: 5,
+                   status: :pending, paid_at: nil)
     Order.create!(
       order_number: order_number,
       order_type: order_type,
       table_number: order_type == :takeout ? nil : table_number,
       subtotal: 100, tax: 10, total: 110,
-      placed_at: placed_at
+      placed_at: placed_at,
+      status: status,
+      paid_at: paid_at
     )
   end
 
@@ -52,5 +55,34 @@ class OrderTest < ActiveSupport::TestCase
       create_order(order_number: "20260608-002", placed_at: Time.current, order_type: :takeout, table_number: nil)
       assert_equal "20260608-003", Order.next_order_number
     end
+  end
+
+  # --- kitchen-axis 終端状態 Served（提供済み）。用語集 CONTEXT.md:91-93 / ADR-0001 ---
+
+  test "提供済み（Served）かつ未会計の注文は会計待ち（awaiting_payment）に入る" do
+    served_unpaid = create_order(order_number: "#S-1", placed_at: Time.current, status: :served)
+
+    assert served_unpaid.served?
+    assert_includes Order.awaiting_payment, served_unpaid
+  end
+
+  test "提供済みかつ会計済みの注文は会計待ちに入らない" do
+    served_paid = create_order(
+      order_number: "#S-2", placed_at: Time.current, status: :served, paid_at: Time.current
+    )
+
+    assert_not_includes Order.awaiting_payment, served_paid
+  end
+
+  test "未提供（Ready 以前）の注文は会計待ちに入らない" do
+    ready = create_order(order_number: "#S-3", placed_at: Time.current, status: :ready)
+
+    assert_not_includes Order.awaiting_payment, ready
+  end
+
+  test "レジ当日キュー（for_cashier_today）は本日の提供済み注文を含む" do
+    served_today = create_order(order_number: "#S-4", placed_at: Time.current, status: :served)
+
+    assert_includes Order.for_cashier_today, served_today
   end
 end

@@ -13,7 +13,7 @@ class KitchenController < ApplicationController
         pending:     serialize_orders(grouped["pending"] || []),
         in_progress: serialize_orders(grouped["in_progress"] || []),
         ready:       serialize_orders(grouped["ready"] || []),
-        completed:   serialize_orders(grouped["completed"] || [])
+        served:      serialize_orders(grouped["served"] || [])
       }
     }
   end

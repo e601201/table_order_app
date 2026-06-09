@@ -157,7 +157,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     login_as(:admin_staff)
     create_order(order_number: "#A-OLD", placed_at: 2.hours.ago, status: :in_progress, paid: false,
                  total: 1980, item_name: "テリヤキバーガー", quantity: 2)
-    create_order(order_number: "#A-NEW", placed_at: 1.minute.ago, status: :completed, paid: true)
+    create_order(order_number: "#A-NEW", placed_at: 1.minute.ago, status: :served, paid: true)
     create_order(order_number: "#A-YDAY", placed_at: 1.day.ago)
 
     get admin_dashboard_path

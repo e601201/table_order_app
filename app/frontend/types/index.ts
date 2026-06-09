@@ -113,7 +113,7 @@ export type PlacedOrder = {
   totals: CartTotals
 }
 
-export type KitchenOrderStatus = 'pending' | 'in_progress' | 'ready' | 'completed'
+export type KitchenOrderStatus = 'pending' | 'in_progress' | 'ready' | 'served'
 
 export type KitchenOrderItem = {
   id: number

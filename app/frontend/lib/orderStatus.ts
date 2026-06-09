@@ -19,7 +19,7 @@ export const kitchenStatusMeta: Record<KitchenOrderStatus, BadgeMeta> = {
   pending: badge('受付', '#d97706'),
   in_progress: badge('調理中', '#2563eb'),
   ready: badge('提供待ち', '#0891b2'),
-  completed: badge('提供済み', '#475569'),
+  served: badge('提供済み', '#475569'),
 }
 
 // 調理タブの並び順（すべて を先頭に）。
@@ -27,7 +27,7 @@ export const kitchenStatusOrder: KitchenOrderStatus[] = [
   'pending',
   'in_progress',
   'ready',
-  'completed',
+  'served',
 ]
 
 // 支払い（axis 2）: Unpaid → Paid。CONTEXT.md の業務側正準語「会計」に揃える。
