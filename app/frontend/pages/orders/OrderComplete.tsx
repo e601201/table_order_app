@@ -56,7 +56,7 @@ export default function OrderComplete({ order }: OrderCompleteProps) {
           <div className="flex flex-col px-5">
             {items.map((item, index) => (
               <div
-                key={item.line_id}
+                key={item.id}
                 className={`flex items-center justify-between py-2 ${
                   index < items.length - 1 ? 'border-b border-[#F0E0D0]' : ''
                 }`}
@@ -115,10 +115,10 @@ export default function OrderComplete({ order }: OrderCompleteProps) {
             <CreditCard className="w-[22px] h-[22px] text-[#FB8C00]" />
           </div>
           <span className="text-[15px] font-bold text-[#1A1210] text-center">
-            レジへお進みください
+            お会計はお食事のあとで
           </span>
           <p className="text-xs text-[#6D5D4B] text-center leading-[1.4]">
-            レジで注文番号をお伝えいただき、お支払いください。お支払い確認後に調理を開始します。
+            お料理ができ次第、お席までお持ちします。お会計はお食事後にレジで、注文番号をお伝えください。
           </p>
         </div>
 
