@@ -90,7 +90,7 @@ _Avoid_: Done, prepared, plated
 
 **Served**:
 Staff has handed the food to the customer. At this point the order becomes eligible for payment at the cashier. This is **not** "fully done" — the order is still unpaid.
-_Avoid_: Completed, done, finished (these all wrongly imply the transaction is over; in code today this state is still spelled `completed` and should be renamed)
+_Avoid_: Completed, done, finished (these all wrongly imply the transaction is over). The kitchen-axis enum is spelled `served` in code (integer value `3`).
 
 ### Payment status (axis 2)
 

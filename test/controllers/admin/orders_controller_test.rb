@@ -116,9 +116,9 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
 
   test "本日の売上は会計済みの total 合計のみ" do
     login_as(:admin_staff)
-    create_order(status: :completed, paid: true, total: 2400)
-    create_order(status: :completed, paid: true, total: 600)
-    create_order(status: :completed, paid: false, total: 1000) # 未会計は売上に含めない
+    create_order(status: :served, paid: true, total: 2400)
+    create_order(status: :served, paid: true, total: 600)
+    create_order(status: :served, paid: false, total: 1000) # 未会計は売上に含めない
     create_order(status: :pending, paid: false, total: 500)
 
     get admin_orders_path
@@ -127,8 +127,8 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
 
   test "会計待ち件数は提供済みかつ未会計のみ" do
     login_as(:admin_staff)
-    create_order(status: :completed, paid: false) # Served + Unpaid → カウント
-    create_order(status: :completed, paid: true)  # Served + Paid → 含めない
+    create_order(status: :served, paid: false) # Served + Unpaid → カウント
+    create_order(status: :served, paid: true)  # Served + Paid → 含めない
     create_order(status: :ready, paid: false)     # 未提供 → 含めない
     create_order(status: :pending, paid: false)   # 未提供 → 含めない
 
@@ -141,7 +141,7 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
   test "admin は詳細を表示できる（明細・金額内訳・支払い情報を含む）" do
     login_as(:admin_staff)
     order = create_order(
-      status: :completed, paid: true, total: 2400, tax: 218,
+      status: :served, paid: true, total: 2400, tax: 218,
       items: [ {
         name: "ハンバーガーセット", quantity: 2, unit_price: 1200,
         size_label: "ラージ", addons: [ { "id" => "cheese", "label" => "チーズ追加", "extra" => 50 } ]
@@ -170,7 +170,7 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
 
   test "未会計注文の詳細は paid_at と payment_method が nil" do
     login_as(:admin_staff)
-    order = create_order(status: :completed, paid: false)
+    order = create_order(status: :served, paid: false)
 
     get admin_order_path(order)
     detail = inertia.props[:order]

@@ -13,7 +13,7 @@ class CashierController < ApplicationController
     order = Order.includes(:order_items).find_by(id: params[:id])
     return redirect_to(cashier_path) if order.nil?
     return redirect_to(cashier_payment_complete_path(order)) if order.paid?
-    return redirect_to(cashier_path) unless order.completed?
+    return redirect_to(cashier_path) unless order.served?
 
     render inertia: "cashier/PaymentConfirm", props: {
       order: serialize_order(order)
@@ -24,7 +24,7 @@ class CashierController < ApplicationController
     order = Order.find_by(id: params[:id])
     return redirect_to(cashier_path) if order.nil?
     return redirect_to(cashier_payment_complete_path(order)) if order.paid?
-    return redirect_to(cashier_path) unless order.completed?
+    return redirect_to(cashier_path) unless order.served?
 
     order.update!(
       paid_at: Time.zone.now,

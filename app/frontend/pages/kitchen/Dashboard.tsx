@@ -11,14 +11,14 @@ const statusConfig: Record<KitchenOrderStatus, { color: string; bg: string; labe
   pending:     { color: '#dc2626', bg: '#fef2f2', label: '新規注文' },
   in_progress: { color: '#ea580c', bg: '#fff7ed', label: '調理中' },
   ready:       { color: '#16a34a', bg: '#f0fdf4', label: '提供準備完了' },
-  completed:   { color: '#737373', bg: '#f5f5f5', label: '完了' },
+  served:      { color: '#737373', bg: '#f5f5f5', label: '提供済み' },
 }
 
 const nextStatus: Record<KitchenOrderStatus, KitchenOrderStatus | null> = {
   pending: 'in_progress',
   in_progress: 'ready',
-  ready: 'completed',
-  completed: null,
+  ready: 'served',
+  served: null,
 }
 
 // --- フォーマッタ ---
@@ -100,7 +100,7 @@ function OrderCard({
     pending:     { label: '調理開始', icon: <Flame size={16} color="#FFFFFF" />, bg: '#ea580c', textColor: '#FFFFFF' },
     in_progress: { label: '提供準備完了にする', icon: <Check size={16} color="#FFFFFF" />, bg: '#16a34a', textColor: '#FFFFFF' },
     ready:       { label: 'スタッフに通知', icon: <Bell size={16} color="#0a0a0a" />, bg: '#f5f5f5', textColor: '#0a0a0a', border: '1px solid #e5e5e5' },
-    completed:   { label: '', icon: null, bg: '', textColor: '' },
+    served:      { label: '', icon: null, bg: '', textColor: '' },
   }
 
   const btn = buttonConfig[order.status]
@@ -191,7 +191,7 @@ function OrderCard({
       </div>
 
       {/* アクションボタン */}
-      {order.status !== 'completed' && (
+      {order.status !== 'served' && (
         <div className="px-3.5 py-2.5" style={{ borderTop: '1px solid #e5e5e5' }}>
           <button
             onClick={() => onAction(order)}
@@ -280,7 +280,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
 
   const sectionOrders = (status: KitchenOrderStatus): KitchenOrder[] => {
     if (activeFilter === 'all') {
-      return status === 'completed' ? [] : ordersByStatus[status]
+      return status === 'served' ? [] : ordersByStatus[status]
     }
     return activeFilter === status ? ordersByStatus[status] : []
   }
@@ -288,7 +288,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
   const now = new Date()
   const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
 
-  const visibleSections: KitchenOrderStatus[] = ['pending', 'in_progress', 'ready', 'completed']
+  const visibleSections: KitchenOrderStatus[] = ['pending', 'in_progress', 'ready', 'served']
   const hasAny = visibleSections.some((s) => sectionOrders(s).length > 0)
 
   return (
@@ -387,32 +387,32 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
             <div className="h-px mx-3" style={{ backgroundColor: '#e5e5e5' }} />
 
             <button
-              onClick={() => setActiveFilter('completed')}
+              onClick={() => setActiveFilter('served')}
               className="flex items-center justify-between w-full rounded-lg px-3 py-2.5"
-              style={activeFilter === 'completed' ? { backgroundColor: '#171717' } : {}}
+              style={activeFilter === 'served' ? { backgroundColor: '#171717' } : {}}
             >
               <div className="flex items-center gap-2.5">
-                <CircleCheck size={18} color={activeFilter === 'completed' ? '#fafafa' : '#737373'} />
+                <CircleCheck size={18} color={activeFilter === 'served' ? '#fafafa' : '#737373'} />
                 <span
                   style={{
                     fontFamily: 'Inter, sans-serif',
                     fontSize: 14,
-                    fontWeight: activeFilter === 'completed' ? 600 : 500,
-                    color: activeFilter === 'completed' ? '#fafafa' : '#737373',
+                    fontWeight: activeFilter === 'served' ? 600 : 500,
+                    color: activeFilter === 'served' ? '#fafafa' : '#737373',
                   }}
                 >
-                  完了
+                  提供済み
                 </span>
               </div>
               <span
                 className="text-xs font-bold rounded-xl px-2 py-0.5"
                 style={{
                   fontFamily: 'Inter, sans-serif',
-                  backgroundColor: activeFilter === 'completed' ? '#fafafa' : '#f5f5f5',
-                  color: activeFilter === 'completed' ? '#171717' : '#737373',
+                  backgroundColor: activeFilter === 'served' ? '#fafafa' : '#f5f5f5',
+                  color: activeFilter === 'served' ? '#171717' : '#737373',
                 }}
               >
-                {countByStatus('completed')}
+                {countByStatus('served')}
               </span>
             </button>
           </aside>
