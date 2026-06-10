@@ -1,5 +1,6 @@
 class Order < ApplicationRecord
   has_many :order_items, dependent: :destroy
+  belongs_to :line_account, optional: true
 
   enum :status, { pending: 0, in_progress: 1, ready: 2, served: 3 }, default: :pending
   enum :order_type, { in_store: 0, takeout: 1 }, default: :in_store
@@ -8,6 +9,10 @@ class Order < ApplicationRecord
   validates :subtotal, :tax, :total, :placed_at, presence: true
   validates :table_number, presence: true, if: :in_store?
   validates :table_number, absence: true, if: :takeout?
+  # table_number と対をなす相互排他（ADR-0008）: Takeout の身元は LineAccount、
+  # In-store の所在は table_number。既存 takeout 行はリセット容認で一本化。
+  validates :line_account, presence: true, if: :takeout?
+  validates :line_account, absence: true, if: :in_store?
 
   scope :for_cashier_today, -> {
     today_orders = where(placed_at: Time.zone.today.all_day)

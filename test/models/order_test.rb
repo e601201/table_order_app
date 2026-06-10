@@ -4,15 +4,28 @@ require "test_helper"
 # グローバル一意、客への表示は末尾の当日連番 `NNN`。連番は暦日（`all_day` 規約）で当日件数+1。
 class OrderTest < ActiveSupport::TestCase
   def create_order(order_number:, placed_at:, order_type: :in_store, table_number: 5,
-                   status: :pending, paid_at: nil)
+                   status: :pending, paid_at: nil, line_account: nil)
+    takeout = order_type == :takeout
     Order.create!(
       order_number: order_number,
       order_type: order_type,
-      table_number: order_type == :takeout ? nil : table_number,
+      table_number: takeout ? nil : table_number,
+      line_account: line_account || (takeout ? line_accounts(:taro) : nil),
       subtotal: 100, tax: 10, total: 110,
       placed_at: placed_at,
       status: status,
       paid_at: paid_at
+    )
+  end
+
+  def build_order(order_type:, table_number: nil, line_account: nil)
+    Order.new(
+      order_number: "#V-#{SecureRandom.hex(3)}",
+      order_type: order_type,
+      table_number: table_number,
+      line_account: line_account,
+      subtotal: 100, tax: 10, total: 110,
+      placed_at: Time.current
     )
   end
 
@@ -84,5 +97,34 @@ class OrderTest < ActiveSupport::TestCase
     served_today = create_order(order_number: "#S-4", placed_at: Time.current, status: :served)
 
     assert_includes Order.for_cashier_today, served_today
+  end
+
+  # --- Takeout × LineAccount 相互排他（ADR-0008 / CONTEXT.md: LineAccount）。
+  # table_number の相互排他（in_store 必須 / takeout 不在）と対をなす ---
+
+  test "takeout 注文は LineAccount が必須" do
+    order = build_order(order_type: :takeout)
+
+    assert_not order.valid?
+    assert order.errors.added?(:line_account, :blank)
+  end
+
+  test "takeout 注文は LineAccount 付きで有効" do
+    order = build_order(order_type: :takeout, line_account: line_accounts(:taro))
+
+    assert_predicate order, :valid?
+  end
+
+  test "in_store 注文に LineAccount は付けられない" do
+    order = build_order(order_type: :in_store, table_number: 5, line_account: line_accounts(:taro))
+
+    assert_not order.valid?
+    assert order.errors.added?(:line_account, :present)
+  end
+
+  test "in_store 注文は LineAccount なしで有効（従来どおり）" do
+    order = build_order(order_type: :in_store, table_number: 5)
+
+    assert_predicate order, :valid?
   end
 end

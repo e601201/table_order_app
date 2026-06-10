@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_06_114800) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_090100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_114800) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "line_accounts", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "display_name"
+    t.string "line_user_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["line_user_id"], name: "index_line_accounts_on_line_user_id", unique: true
   end
 
   create_table "menu_items", force: :cascade do |t|
@@ -73,17 +81,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_114800) do
 
   create_table "orders", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "line_account_id"
     t.string "order_number", null: false
     t.integer "order_type", default: 0, null: false
     t.datetime "paid_at"
     t.string "payment_method"
     t.datetime "placed_at", null: false
+    t.string "service_notification_token"
     t.integer "status", default: 0, null: false
     t.integer "subtotal", null: false
     t.integer "table_number"
     t.integer "tax", null: false
     t.integer "total", null: false
     t.datetime "updated_at", null: false
+    t.index ["line_account_id"], name: "index_orders_on_line_account_id"
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
     t.index ["paid_at"], name: "index_orders_on_paid_at"
   end
@@ -101,4 +112,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_06_114800) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "line_accounts"
 end
