@@ -105,6 +105,9 @@ function OrderCard({
 
   const btn = buttonConfig[order.status]
 
+  // テイクアウトのキッチン終点は Ready — 受け渡し（Served）はレジの会計が行う（ADR-0009）
+  const handoffAtRegister = order.status === 'ready' && order.order_type === 'takeout'
+
   const qtyBg = order.status === 'ready' ? '#f0fdf4' : '#f5f5f5'
   const qtyColor = order.status === 'ready' ? '#16a34a' : '#0a0a0a'
 
@@ -193,22 +196,38 @@ function OrderCard({
       {/* アクションボタン */}
       {order.status !== 'served' && (
         <div className="px-3.5 py-2.5" style={{ borderTop: '1px solid #e5e5e5' }}>
-          <button
-            onClick={() => onAction(order)}
-            className="flex items-center justify-center gap-1.5 w-full rounded-lg"
-            style={{
-              height: 36,
-              backgroundColor: btn.bg,
-              color: btn.textColor,
-              border: btn.border,
-              fontFamily: 'Inter, sans-serif',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            {btn.icon}
-            {btn.label}
-          </button>
+          {handoffAtRegister ? (
+            <div
+              className="flex items-center justify-center gap-1.5 w-full rounded-lg"
+              style={{
+                height: 36,
+                backgroundColor: '#f5f5f5',
+                color: '#737373',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              レジで受け渡し（会計待ち）
+            </div>
+          ) : (
+            <button
+              onClick={() => onAction(order)}
+              className="flex items-center justify-center gap-1.5 w-full rounded-lg"
+              style={{
+                height: 36,
+                backgroundColor: btn.bg,
+                color: btn.textColor,
+                border: btn.border,
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              {btn.icon}
+              {btn.label}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -232,6 +251,8 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
   const handleAction = (order: KitchenOrder) => {
     const next = nextStatus[order.status]
     if (!next) return
+    // テイクアウトの Ready → Served はレジの会計経由のみ（ADR-0009。サーバー側でも拒否）
+    if (next === 'served' && order.order_type === 'takeout') return
 
     const from = order.status
 

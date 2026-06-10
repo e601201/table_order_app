@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
-import { kitchenStatusMeta } from '@/lib/orderStatus'
+import { takeoutCustomerStatusMeta } from '@/lib/orderStatus'
 import type { HistoryOrder } from '@/types'
 
 interface HistoryProps {
@@ -58,7 +58,8 @@ export default function History({ display_name, orders }: HistoryProps) {
           )}
 
           {orders.map((order) => {
-            const status = kitchenStatusMeta[order.status]
+            // 履歴はテイクアウト専用面 — 終端は「受取済み」（ADR-0009）
+            const status = takeoutCustomerStatusMeta[order.status]
             return (
               <div
                 key={order.id}

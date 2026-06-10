@@ -35,3 +35,11 @@ export const paymentStatusMeta: Record<PaymentStatus, BadgeMeta> = {
   unpaid: badge('未会計', '#dc2626'),
   paid: badge('会計済み', '#16a34a'),
 }
+
+// Takeout の客向け表示（ADR-0009）: 手渡しが会計と同時に起きるため、終端の Served は
+// 「受取済み」と表記する。スタッフ面の正準コピー（提供済み）は変えない — 客向けの
+// 言い分けはこの1箇所だけで定義し、第3の表記揺れを作らない（CONTEXT.md: Served）。
+export const takeoutCustomerStatusMeta: Record<KitchenOrderStatus, BadgeMeta> = {
+  ...kitchenStatusMeta,
+  served: badge('受取済み', '#16a34a'),
+}
