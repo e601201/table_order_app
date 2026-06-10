@@ -20,7 +20,14 @@ class KitchenController < ApplicationController
 
   def update_order_status
     order = Order.find(params[:id])
-    order.update!(status: params.require(:status))
+    new_status = params.require(:status)
+    # テイクアウトの Ready → Served はレジの会計経由のみ（ADR-0009: 手渡し＝会計）。
+    # 盤面 UI もボタンを出さないが、境界はサーバー側で守る。
+    if order.takeout? && new_status.to_s == "served"
+      return redirect_to(kitchen_path, alert: "テイクアウトはレジの会計で提供済みになります")
+    end
+
+    order.update!(status: new_status)
     notify_order_ready(order)
     redirect_to kitchen_path
   end

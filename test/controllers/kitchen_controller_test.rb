@@ -100,6 +100,28 @@ class KitchenControllerTest < ActionDispatch::IntegrationTest
     assert_predicate order.reload, :ready?
   end
 
+  # --- テイクアウトの Served はレジの会計経由のみ（ADR-0009）。盤面からは拒否する ---
+
+  test "テイクアウトを盤面から served にはできない" do
+    login_as(:kitchen_staff)
+    order = create_takeout_order(status: :ready, token: nil)
+
+    patch kitchen_order_path(order), params: { status: "served" }
+
+    assert_redirected_to kitchen_path
+    assert_predicate order.reload, :ready? # 遷移していない
+    assert flash[:alert].present?
+  end
+
+  test "in_store は盤面から served にできる（従来どおり）" do
+    login_as(:kitchen_staff)
+    order = create_order(status: :ready)
+
+    patch kitchen_order_path(order), params: { status: "served" }
+
+    assert_predicate order.reload, :served?
+  end
+
   test "サービスメッセージの送信失敗でもステータス遷移は成功する（ベストエフォート）" do
     login_as(:kitchen_staff)
     order = create_takeout_order(status: :in_progress, token: "token-1")

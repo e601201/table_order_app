@@ -181,6 +181,7 @@ if Rails.env.development?
   build_demo_order.call(placed_at: day_at.call(today, 13), status: :in_progress, table_number: 7, lines: [ [ 1, 1 ], [ 5, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 14), status: :ready, table_number: 9, lines: [ [ 2, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 15), status: :served, table_number: 10, lines: [ [ 6, 3 ] ]) # 提供済み・未会計（会計待ち）
+  build_demo_order.call(placed_at: day_at.call(today, 16), status: :ready, lines: [ [ 3, 1 ], [ 7, 1 ] ]) # テイクアウト・できあがり（Ready + Unpaid = 会計待ち。ADR-0009）
 
   puts "デモ注文を #{Order.where('order_number LIKE ?', '#DEMO-%').count} 件シードしました（dev のみ）"
 end

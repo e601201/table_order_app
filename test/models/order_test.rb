@@ -99,6 +99,42 @@ class OrderTest < ActiveSupport::TestCase
     assert_includes Order.for_cashier_today, served_today
   end
 
+  # --- 会計待ちキューの order type 分岐（ADR-0009）。In-store は Served + Unpaid、
+  # Takeout は手渡しが会計と同時のため Ready + Unpaid が会計待ち ---
+
+  test "takeout の Ready + Unpaid は会計待ちに入る" do
+    takeout_ready = create_order(order_number: "#Q-1", placed_at: Time.current,
+                                 order_type: :takeout, status: :ready)
+
+    assert_includes Order.awaiting_payment, takeout_ready
+  end
+
+  test "takeout の Ready + Unpaid はレジ当日キュー（for_cashier_today）にも入る" do
+    takeout_ready = create_order(order_number: "#Q-2", placed_at: Time.current,
+                                 order_type: :takeout, status: :ready)
+
+    assert_includes Order.for_cashier_today, takeout_ready
+  end
+
+  test "in_store の Ready + Unpaid は会計待ちに入らない（従来どおり）" do
+    in_store_ready = create_order(order_number: "#Q-3", placed_at: Time.current, status: :ready)
+
+    assert_not_includes Order.awaiting_payment, in_store_ready
+  end
+
+  test "in_store の Ready + Unpaid はレジ当日キュー（for_cashier_today）にも入らない" do
+    in_store_ready = create_order(order_number: "#Q-5", placed_at: Time.current, status: :ready)
+
+    assert_not_includes Order.for_cashier_today, in_store_ready
+  end
+
+  test "旧フローの Served + Unpaid な takeout は会計待ちに入らない（リセット容認）" do
+    legacy = create_order(order_number: "#Q-4", placed_at: Time.current,
+                          order_type: :takeout, status: :served)
+
+    assert_not_includes Order.awaiting_payment, legacy
+  end
+
   # --- Takeout × LineAccount 相互排他（ADR-0008 / CONTEXT.md: LineAccount）。
   # table_number の相互排他（in_store 必須 / takeout 不在）と対をなす ---
 

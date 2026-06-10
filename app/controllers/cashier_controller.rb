@@ -13,7 +13,7 @@ class CashierController < ApplicationController
     order = Order.includes(:order_items).find_by(id: params[:id])
     return redirect_to(cashier_path) if order.nil?
     return redirect_to(cashier_payment_complete_path(order)) if order.paid?
-    return redirect_to(cashier_path) unless order.served?
+    return redirect_to(cashier_path) unless payable?(order)
 
     render inertia: "cashier/PaymentConfirm", props: {
       order: serialize_order(order)
@@ -24,12 +24,13 @@ class CashierController < ApplicationController
     order = Order.find_by(id: params[:id])
     return redirect_to(cashier_path) if order.nil?
     return redirect_to(cashier_payment_complete_path(order)) if order.paid?
-    return redirect_to(cashier_path) unless order.served?
+    return redirect_to(cashier_path) unless payable?(order)
 
-    order.update!(
-      paid_at: Time.zone.now,
-      payment_method: permitted_payment_method
-    )
+    attributes = { paid_at: Time.zone.now, payment_method: permitted_payment_method }
+    # テイクアウトは会計が手渡しを兼ねる（ADR-0009）。Served + Unpaid の中間状態を
+    # 作らないよう、kitchen 軸の Served を同一更新で書く。LINE への追加通知は送らない。
+    attributes[:status] = :served if order.takeout?
+    order.update!(attributes)
     redirect_to cashier_payment_complete_path(order)
   end
 
@@ -43,6 +44,12 @@ class CashierController < ApplicationController
   end
 
   private
+
+  # 会計の前提（ADR-0009）: In-store は提供済み（Served）が前提。Takeout は手渡しが
+  # 会計と同時のため できあがり（Ready）が前提 — 旧フローの Served + Unpaid は通らない。
+  def payable?(order)
+    order.takeout? ? order.ready? : order.served?
+  end
 
   def permitted_payment_method
     method = params[:payment_method].to_s
