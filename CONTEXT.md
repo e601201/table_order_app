@@ -4,7 +4,7 @@ A POC table-ordering system for a restaurant. Three roles share the same `Order`
 
 ## Language
 
-An `Order` carries two independent state axes: **kitchen progress** (where the food is in the cooking flow) and **payment status** (whether money has been collected). The two are tracked separately because the responsible role and the triggering events differ. The combination `Served + Unpaid` is a meaningful and common state — it is exactly the cashier's work queue.
+An `Order` carries two independent state axes: **kitchen progress** (where the food is in the cooking flow) and **payment status** (whether money has been collected). The two are tracked separately because the responsible role and the triggering events differ. The combination `Served + Unpaid` is a meaningful and common state for an `In-store` order — it is exactly the cashier's work queue. For a `Takeout` order the handover itself happens at the register, so `Served + Unpaid` never exists: the cashier's queue holds its `Ready + Unpaid` orders instead (see `Order type`).
 
 ### Roles
 
@@ -23,11 +23,11 @@ An authenticated, persisted account for a non-customer person who logs in to ope
 _Avoid_: User (too overloaded — the Customer is also a system user), Account, Member, Employee
 
 **Kitchen** (canonical Japanese: **キッチン**):
-The role that advances every kitchen-progress transition: `Pending → In progress → Ready → Served`. Receives `OrderPlaced` and raises `OrderServed`. Does not touch the payment axis.
+The role that advances kitchen progress: `Pending → In progress → Ready` for every order, and `Ready → Served` for `In-store` orders only. A `Takeout` order leaves the kitchen's hands at `Ready` — its `Served` transition is raised by the `Cashier`'s `Settlement`, because the register handover and the payment are one act. Receives `OrderPlaced`; raises `OrderServed` for `In-store` orders. Does not touch the payment axis.
 _Avoid_: Chef, cook, galley, 厨房, 調理場, 調理 (the act of cooking is "preparing"; the role surface is "Kitchen / キッチン")
 
 **Cashier** (canonical Japanese: **レジ**):
-The role that advances the payment axis (`Unpaid → Paid`). Works against the queue of `Served + Unpaid` orders. Does not touch the kitchen-progress axis.
+The role that advances the payment axis (`Unpaid → Paid`). Works against the queue of `Served + Unpaid` `In-store` orders and `Ready + Unpaid` `Takeout` orders. For an `In-store` order it never touches the kitchen-progress axis; for a `Takeout` order its `Settlement` doubles as the handover, advancing `Ready → Served` and `Unpaid → Paid` in the same act.
 _Avoid_: Register, checkout, 会計係, 会計スタッフ, 会計 (the **role** name is "レジ"; "会計" is reserved for the act of settling — see the Flagged ambiguities)
 
 **Admin** (canonical Japanese: **管理者**):
@@ -75,7 +75,7 @@ A customer's request consisting of one or more `Line`s, identified by an `order_
 _Avoid_: Purchase, ticket, transaction
 
 **Order type**:
-A property of `Order` that distinguishes how the food is handed over. Two values: `In-store` (customer eats at a table inside the restaurant; an `Order` must carry a `table_number` and is never tied to a `LineAccount`) and `Takeout` (customer orders through the LINE Mini App and picks up at the counter; `table_number` is absent and the `Order` must carry the placing `LineAccount`). The kitchen progress lifecycle and the payment axis are identical for both — `Order type` only affects where the food is handed over physically and the UI copy that surrounds it. It does **not** change the meaning of `Served` (in both cases, `Served` means "the customer has the food in hand") nor the order in which kitchen progress and payment proceed.
+A property of `Order` that distinguishes how the food is handed over. Two values: `In-store` (customer eats at a table inside the restaurant; an `Order` must carry a `table_number` and is never tied to a `LineAccount`) and `Takeout` (customer orders through the LINE Mini App and picks up at the counter; `table_number` is absent and the `Order` must carry the placing `LineAccount`). `Order type` does not change the meaning of `Served` (in both cases it means "the customer has the food in hand") — but it does change **who raises it and when**: an `In-store` order is served at the table first and settled later (`Served → Paid`), while a `Takeout` order is handed over at the register, so the `Cashier`'s `Settlement` raises `Served` and `Paid` in the same act (`Ready → Served + Paid`; `Served + Unpaid` never exists for `Takeout`).
 _Avoid_: Dine-in / dine-out (acceptable as UI copy aliases only; canonical names remain `In-store` and `Takeout`)
 
 ### Kitchen progress (axis 1)
@@ -93,8 +93,8 @@ Kitchen has finished cooking. The food is waiting to be handed to the customer (
 _Avoid_: Done, prepared, plated
 
 **Served**:
-Staff has handed the food to the customer. At this point the order becomes eligible for payment at the cashier. This is **not** "fully done" — the order is still unpaid.
-_Avoid_: Completed, done, finished (these all wrongly imply the transaction is over). The kitchen-axis enum is spelled `served` in code (integer value `3`).
+Staff has handed the food to the customer. For an `In-store` order this happens at the table and the order then becomes eligible for payment — it is **not** "fully done", the order is still unpaid. For a `Takeout` order the handover happens at the register as part of `Settlement`, so `Served` and `Paid` arrive together (see `Order type`). Customer-facing copy splits by `Order type`: **提供済み** for `In-store`, **受取済み** for `Takeout` (the customer picked the food up at the counter). Staff surfaces use 提供済み for both.
+_Avoid_: Completed, done, finished (these all wrongly imply the transaction is over); 受取済み on staff surfaces (staff vocabulary stays 提供済み regardless of `Order type`). The kitchen-axis enum is spelled `served` in code (integer value `3`).
 
 ### Payment status (axis 2)
 
@@ -126,12 +126,12 @@ The event raised when the `Order` transitions from `In progress` to `Ready` — 
 _Avoid_: "Ready notification" as the noun (the noun is the event; the LINE message is one propagation of it — see 通知 in Flagged ambiguities), order-finished, cooked
 
 **OrderServed**:
-The event raised when the `Order` transitions from `Ready` to `Served` — i.e. the food has been handed to the customer. This is the signal that makes the order eligible for the cashier; the cashier surface treats `OrderServed` as the moment an order enters its work queue.
+The event raised when the `Order` transitions from `Ready` to `Served` — i.e. the food has been handed to the customer. For an `In-store` order it is raised by the `Kitchen` carrying the food to the table, and it is the signal that puts the order into the cashier's work queue. For a `Takeout` order it is raised by the `Cashier`'s own `Settlement` (handover and payment are one act), so it never enters a queue — the queue-entry signal for `Takeout` is `OrderReady`.
 _Avoid_: "Order completed" (clashes with the everyday-Japanese "完了"), order-delivered (used as alias only in customer-facing copy if needed)
 
 ### Flagged ambiguities
 
-**"完了" (kanjō / kanryō)** in everyday Japanese means "everything is finished." In this context the lifecycle has **two** completion points: kitchen-completion (`Served`) and payment-completion (`Paid`). Always disambiguate which one you mean. Reserve "完了" in UI copy for the post-payment state if at all; prefer "提供済み" for `Served`.
+**"完了" (kanjō / kanryō)** in everyday Japanese means "everything is finished." In this context the lifecycle has **two** completion points: kitchen-completion (`Served`) and payment-completion (`Paid`). Always disambiguate which one you mean. Reserve "完了" in UI copy for the post-payment state if at all; prefer "提供済み" for `Served` (受取済み when addressing the `Takeout` customer — see `Served`).
 
 **"通知" (notification)** is reserved for *events being propagated*, not for the UI affordance that makes them visible. "キッチンに通知する" means "raise `OrderPlaced` such that the kitchen receives it"; whether that surfaces as an auto-refresh, a sound, or a manual reload is a separate UI concern.
 
@@ -178,7 +178,7 @@ A walk-through of a typical evening flow between a developer (D) and the operati
 
 **D**: テイクアウトの注文だと何が違いますか？
 
-**M**: `Order type` が `Takeout` で `table_number` がないだけ。kitchen progress 軸も payment status 軸も `In-store` と完全に同じ。`Served` の意味も同じ — カウンターで客の手に料理が渡った瞬間。
+**M**: `Order type` が `Takeout` になり、`table_number` の代わりに注文した `LineAccount` が付く。キッチンの仕事は `Ready` まで — そこで `OrderReady` が LINE で客を呼び出す。カウンターでの手渡しはレジの `会計` と同じ瞬間に起きるから、`Ready` のテイクアウト注文をレジが会計すると `Served` と `Paid` に同時に進む。`Served` の意味自体は同じ — 客の手に料理が渡った瞬間 — で、テイクアウトの客向けにはそれを「受取済み」と表示する。
 
 **D**: 「完了」という言葉は UI のどこに使えますか？
 
