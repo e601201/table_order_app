@@ -21,10 +21,20 @@ class KitchenController < ApplicationController
   def update_order_status
     order = Order.find(params[:id])
     order.update!(status: params.require(:status))
+    notify_order_ready(order)
     redirect_to kitchen_path
   end
 
   private
+
+  # OrderReady（ADR-0008）: 「ready への遷移」を保存後の変更検出で拾って通知する。
+  # 厳密な「In progress → Ready」一致だと変則遷移（pending から直接 ready 等）で
+  # 通知が漏れるため、遷移先が ready かどうかだけを見る。同値更新では発火しない。
+  def notify_order_ready(order)
+    return unless order.ready? && order.status_previously_changed?
+
+    OrderReadyNotifier.call(order)
+  end
 
   def serialize_orders(orders)
     orders.map do |order|
