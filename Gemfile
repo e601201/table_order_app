@@ -61,6 +61,9 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # minitest 6 で本体から分離された minitest/mock（LINE 連携アダプタのスタブに使用）
+  gem "minitest-mock"
 end
 
 gem "inertia_rails", "~> 3.19"
