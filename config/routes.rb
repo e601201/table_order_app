@@ -36,6 +36,10 @@ Rails.application.routes.draw do
   post "cashier/payment/:id",          to: "cashier#process_payment",  as: :cashier_process_payment
   get  "cashier/payment/:id/complete", to: "cashier#payment_complete", as: :cashier_payment_complete
 
+  # 客（Takeout）の LINE ログイン（ADR-0008）。テイクアウト面は入口から全面ログイン必須。
+  get  "order/line_login", to: "line_sessions#new", as: :line_login
+  post "order/line_login", to: "line_sessions#create"
+
   # for POC: Order pages
   get "order", to: "orders#home"
   get "order/item/:id", to: "orders#item_detail"

@@ -1,6 +1,13 @@
 class OrdersController < ApplicationController
   include MenuCatalog
   include CartSession
+  include LineAuthentication
+
+  # テイクアウト面は入口から全面ログイン必須（ADR-0008）。order_type は既存ヘルパーの
+  # params 優先で解決する — session のみ参照すると、セッション未確立の初回
+  # GET /order?order_type=takeout が未ログインのまま描画されてすり抜けるため。
+  # In-store はこの before_action ごとスキップされ、認証コードを一切通らない。
+  before_action :require_line_login!, if: -> { order_type == "takeout" }
 
   def home
     # ウェルカム画面からの遷移は「新しい客のセッション開始」として Cart をクリアする
@@ -28,6 +35,8 @@ class OrdersController < ApplicationController
     render inertia: "orders/CartReview", props: {
       table_number: table_number,
       order_type: order_type,
+      # takeout の checkout は LIFF アクセストークンを同送するため LIFF ID を渡す（ADR-0008）
+      liff_id: ENV["LINE_LIFF_ID"],
       cart_items: lines,
       totals: cart_totals(lines)
     }
@@ -70,6 +79,8 @@ class OrdersController < ApplicationController
         order_number: Order.next_order_number,
         order_type:   order_type,
         table_number: table_number,
+        # takeout の持ち主識別（ADR-0008）。ゲート済みなので current_line_account は必ずいる
+        line_account: order_type == "takeout" ? current_line_account : nil,
         subtotal:     totals[:subtotal],
         tax:          totals[:tax],
         total:        totals[:total],
@@ -90,21 +101,34 @@ class OrdersController < ApplicationController
       new_order
     end
 
+    attach_service_notification_token(order)
     clear_cart
     redirect_to "/order/complete/#{order.id}"
   end
 
   # 完了画面は永続 Order を :id で読むだけ（副作用なし）。再表示可能。
-  # 備忘録（ADR-0007 / イシュー #29）: :id は連番で列挙可能。将来は session か
-  # 推測不能トークンで「自分の注文だけ」に絞るガードを足す。POC では未ガード。
+  # takeout は本人（LineAccount）しか見えない（#29 の Takeout 側を解消。ADR-0008）。
+  # 備忘録（ADR-0007 / イシュー #29）: in_store は :id 連番で列挙可能なまま（残存負債）。
   def order_complete
     order = Order.includes(:order_items).find_by(id: params[:id])
     return redirect_to("/order") unless order
+    return redirect_to("/order") if order.takeout? && order.line_account_id != current_line_account&.id
 
     render inertia: "orders/OrderComplete", props: { order: serialize_placed_order(order) }
   end
 
   private
+
+  # サービス通知トークンは Checkout（ユーザー操作）時にしか発行できない（ADR-0008）。
+  # 発行失敗は注文を止めない — OrderReady の通知なしで続行し、ログだけ残す。
+  def attach_service_notification_token(order)
+    return unless order.takeout?
+
+    token = LineServiceMessenger.issue_token(params[:liff_access_token])
+    order.update!(service_notification_token: token) if token.present?
+  rescue StandardError => e
+    Rails.logger.error("サービス通知トークンの発行に失敗 (order=#{order.id}): #{e.class}: #{e.message}")
+  end
 
   def serialize_placed_order(order)
     {
