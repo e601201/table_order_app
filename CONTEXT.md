@@ -11,8 +11,12 @@ An `Order` carries two independent state axes: **kitchen progress** (where the f
 Roles share the system. The **Customer** is unauthenticated and uses the public `/order` tablet surface. Everyone else is a **Staff** — an authenticated account that must log in before reaching its surface (`/kitchen`, `/cashier`, and admin screens). A Staff carries exactly one role that names its responsibility.
 
 **Customer** (canonical Japanese: **客**):
-The person assembling a `Cart` and placing an `Order` from the in-table tablet. Raises `OrderPlaced`. Does not advance kitchen progress and does not settle payment. Not a `Staff` and never logs in.
-_Avoid_: Guest, diner, patron, お客様, ゲスト (acceptable as customer-facing UI copy aliases only; canonical name remains "Customer / 客")
+The person assembling a `Cart` and placing an `Order`. Raises `OrderPlaced`. Does not advance kitchen progress and does not settle payment. Not a `Staff`. Whether a Customer is authenticated depends on the `Order type`: an `In-store` Customer uses the in-table tablet and never logs in; a `Takeout` Customer orders through the LINE Mini App and must be LINE-authenticated before placing an `Order`. There is only one Customer role either way — the kitchen and cashier see the same Customer regardless of authentication.
+_Avoid_: Guest, diner, patron, お客様, ゲスト (acceptable as customer-facing UI copy aliases only; canonical name remains "Customer / 客"); 会員 / Member (there is no membership concept — authentication is a property of the Takeout flow, not a separate role)
+
+**LineAccount** (canonical Japanese: **LINEアカウント**):
+The persisted LINE identity a `Customer` presents when ordering `Takeout` through the LINE Mini App. Identified by the LINE user ID. A `LineAccount` is not a role and not a `Staff` — it is the durable name for "which Customer placed this Takeout Order," enabling order ownership, order history, and LINE notifications. Every `Takeout` `Order` is tied to exactly one `LineAccount`; an `In-store` `Order` never is (the in-table tablet has no identity). One `LineAccount` may own many `Order`s over time.
+_Avoid_: User, Member / 会員 (no membership concept), Account alone, Customer (that is the role — a `LineAccount` is the identity a Customer authenticates with, not the person)
 
 **Staff** (canonical Japanese: **スタッフ**):
 An authenticated, persisted account for a non-customer person who logs in to operate the system. Identified by a login credential and carrying exactly one `role` (`Kitchen`, `Cashier`, or `Admin`). The role gates which surfaces the Staff may reach. A `Customer` is never a `Staff`.
@@ -71,7 +75,7 @@ A customer's request consisting of one or more `Line`s, identified by an `order_
 _Avoid_: Purchase, ticket, transaction
 
 **Order type**:
-A property of `Order` that distinguishes how the food is handed over. Two values: `In-store` (customer eats at a table inside the restaurant; an `Order` must carry a `table_number`) and `Takeout` (customer picks up at the counter; `table_number` is absent). The kitchen progress lifecycle and the payment axis are identical for both — `Order type` only affects where the food is handed over physically and the UI copy that surrounds it. It does **not** change the meaning of `Served` (in both cases, `Served` means "the customer has the food in hand") nor the order in which kitchen progress and payment proceed.
+A property of `Order` that distinguishes how the food is handed over. Two values: `In-store` (customer eats at a table inside the restaurant; an `Order` must carry a `table_number` and is never tied to a `LineAccount`) and `Takeout` (customer orders through the LINE Mini App and picks up at the counter; `table_number` is absent and the `Order` must carry the placing `LineAccount`). The kitchen progress lifecycle and the payment axis are identical for both — `Order type` only affects where the food is handed over physically and the UI copy that surrounds it. It does **not** change the meaning of `Served` (in both cases, `Served` means "the customer has the food in hand") nor the order in which kitchen progress and payment proceed.
 _Avoid_: Dine-in / dine-out (acceptable as UI copy aliases only; canonical names remain `In-store` and `Takeout`)
 
 ### Kitchen progress (axis 1)
@@ -117,8 +121,12 @@ _Avoid_: Bare "決済" for the act, "会計" for the role (the role is "レジ" 
 The event raised the moment a customer finishes checkout and the `Order` enters `Pending`. This is the event the kitchen is "notified" of — "キッチン通知" in the project shorthand refers to the propagation of `OrderPlaced` from the customer's tablet to the kitchen surface. The transport (websocket push, polling, manual refresh) is an implementation choice; the event is the same.
 _Avoid_: "New order notification" (the noun is the event, not the notification), order-received, order-created
 
+**OrderReady**:
+The event raised when the `Order` transitions from `In progress` to `Ready` — the food is done and waiting on the pass. The event is raised for every order regardless of `Order type`, but its only subscriber today is the `Takeout` pickup call: for a `Takeout` order, `OrderReady` is propagated to the placing `LineAccount` as a LINE message ("お作りできました"), summoning the customer to the counter. For an `In-store` order nothing observes it — staff simply carries the food to the table. The `Pending → In progress` transition remains intentionally unnamed — nothing outside the kitchen observes it.
+_Avoid_: "Ready notification" as the noun (the noun is the event; the LINE message is one propagation of it — see 通知 in Flagged ambiguities), order-finished, cooked
+
 **OrderServed**:
-The event raised when the `Order` transitions from `Ready` to `Served` — i.e. the food has been handed to the customer. This is the signal that makes the order eligible for the cashier; the cashier surface treats `OrderServed` as the moment an order enters its work queue. Transitions inside the kitchen (`Pending → In progress → Ready`) are intentionally **not** named as events — they are private to the kitchen surface today.
+The event raised when the `Order` transitions from `Ready` to `Served` — i.e. the food has been handed to the customer. This is the signal that makes the order eligible for the cashier; the cashier surface treats `OrderServed` as the moment an order enters its work queue.
 _Avoid_: "Order completed" (clashes with the everyday-Japanese "完了"), order-delivered (used as alias only in customer-facing copy if needed)
 
 ### Flagged ambiguities
