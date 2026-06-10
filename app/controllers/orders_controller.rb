@@ -6,8 +6,10 @@ class OrdersController < ApplicationController
   # テイクアウト面は入口から全面ログイン必須（ADR-0008）。order_type は既存ヘルパーの
   # params 優先で解決する — session のみ参照すると、セッション未確立の初回
   # GET /order?order_type=takeout が未ログインのまま描画されてすり抜けるため。
+  # 履歴は LineAccount に紐づくページなので、モードを問わず常にログイン必須。
   # In-store はこの before_action ごとスキップされ、認証コードを一切通らない。
-  before_action :require_line_login!, if: -> { order_type == "takeout" }
+  # NOTE: 同名メソッドの before_action は二重登録すると後勝ちで上書きされるため、1つに束ねる。
+  before_action :require_line_login!, if: -> { order_type == "takeout" || action_name == "history" }
 
   def home
     # ウェルカム画面からの遷移は「新しい客のセッション開始」として Cart をクリアする
@@ -117,6 +119,17 @@ class OrdersController < ApplicationController
     render inertia: "orders/OrderComplete", props: { order: serialize_placed_order(order) }
   end
 
+  # 注文履歴（ADR-0008）: 現在進行中＋過去を兼ねる本人限定の一覧。
+  # ページロード時スナップショット（polling なし）。状態の表示文言はフロントの
+  # orderStatus.ts 正準コピーが status キーから引く（第3の表記揺れを作らない）。
+  def history
+    orders = current_line_account.orders.includes(:order_items).order(placed_at: :desc)
+    render inertia: "orders/History", props: {
+      display_name: current_line_account.display_name,
+      orders: orders.map { |order| serialize_history_order(order) }
+    }
+  end
+
   private
 
   # サービス通知トークンは Checkout（ユーザー操作）時にしか発行できない（ADR-0008）。
@@ -128,6 +141,26 @@ class OrdersController < ApplicationController
     order.update!(service_notification_token: token) if token.present?
   rescue StandardError => e
     Rails.logger.error("サービス通知トークンの発行に失敗 (order=#{order.id}): #{e.class}: #{e.message}")
+  end
+
+  def serialize_history_order(order)
+    {
+      id:           order.id,
+      order_number: order.display_number,
+      status:       order.status,
+      placed_at:    order.placed_at.iso8601,
+      total:        order.total,
+      item_count:   order.order_items.sum(&:quantity),
+      items: order.order_items.map do |item|
+        {
+          id:            item.id,
+          name:          item.name,
+          quantity:      item.quantity,
+          customization: order_item_customization(item),
+          line_total:    item.line_total
+        }
+      end
+    }
   end
 
   def serialize_placed_order(order)

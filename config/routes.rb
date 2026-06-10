@@ -51,6 +51,8 @@ Rails.application.routes.draw do
   # 完了画面は永続 Order を :id で読む（ADR-0007）。bare パスは /order へ退避。
   get "order/complete/:id", to: "orders#order_complete", as: :order_complete
   get "order/complete", to: redirect("/order")
+  # 注文履歴（ADR-0008）。LINE ログイン必須・本人の注文だけを返す。
+  get "order/history", to: "orders#history", as: :order_history
 
   # Defines the root path route ("/")
   root "welcome#index"

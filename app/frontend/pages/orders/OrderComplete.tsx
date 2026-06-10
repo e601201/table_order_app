@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react'
-import { Check, Home, CreditCard } from 'lucide-react'
+import { Check, Home, CreditCard, History } from 'lucide-react'
 import type { PlacedOrder } from '@/types'
 
 interface OrderCompleteProps {
@@ -109,21 +109,43 @@ export default function OrderComplete({ order }: OrderCompleteProps) {
         {/* Divider */}
         <div className="h-1.5 bg-[#FFF3E0]" />
 
-        {/* Instruction Section */}
+        {/* Instruction Section（後会計は In-store / Takeout 共通。ADR-0001 / ADR-0008） */}
         <div className="flex flex-col items-center gap-1.5 px-5 py-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#FFF3E0]">
             <CreditCard className="w-[22px] h-[22px] text-[#FB8C00]" />
           </div>
-          <span className="text-[15px] font-bold text-[#1A1210] text-center">
-            お会計はお食事のあとで
-          </span>
-          <p className="text-xs text-[#6D5D4B] text-center leading-[1.4]">
-            お料理ができ次第、お席までお持ちします。お会計はお食事後にレジで、注文番号をお伝えください。
-          </p>
+          {order_type === 'takeout' ? (
+            <>
+              <span className="text-[15px] font-bold text-[#1A1210] text-center">
+                できあがりは LINE でお知らせします
+              </span>
+              <p className="text-xs text-[#6D5D4B] text-center leading-[1.4]">
+                「お作りできました」の通知が届きましたら、カウンターでお受け取りください。お支払いはお受け取りの際にレジで、注文番号をお伝えください。
+              </p>
+            </>
+          ) : (
+            <>
+              <span className="text-[15px] font-bold text-[#1A1210] text-center">
+                お会計はお食事のあとで
+              </span>
+              <p className="text-xs text-[#6D5D4B] text-center leading-[1.4]">
+                お料理ができ次第、お席までお持ちします。お会計はお食事後にレジで、注文番号をお伝えください。
+              </p>
+            </>
+          )}
         </div>
 
         {/* Footer */}
         <div className="flex flex-col items-center gap-2 px-5 pb-5">
+          {order_type === 'takeout' && (
+            <Link
+              href="/order/history"
+              className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-[#FFF3E0] border-[1.5px] border-[#F0E0D0]"
+            >
+              <History className="w-5 h-5 text-[#1A1210]" />
+              <span className="text-base font-semibold text-[#1A1210]">注文履歴を見る</span>
+            </Link>
+          )}
           <Link
             href="/order"
             className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-[#FFF3E0] border-[1.5px] border-[#F0E0D0]"

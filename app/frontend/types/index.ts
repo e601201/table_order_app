@@ -115,6 +115,27 @@ export type PlacedOrder = {
 
 export type KitchenOrderStatus = 'pending' | 'in_progress' | 'ready' | 'served'
 
+// 注文履歴（ADR-0008）の1明細。customization は size / addon の連結ラベル。
+export type HistoryOrderItem = {
+  id: number
+  name: string
+  quantity: number
+  customization: string
+  line_total: number
+}
+
+// 注文履歴の1行。現在進行中＋過去を兼ね、status の表示文言は orderStatus.ts の
+// 正準コピー（kitchenStatusMeta）から引く。order_number は当日連番（display_number）。
+export type HistoryOrder = {
+  id: number
+  order_number: string
+  status: KitchenOrderStatus
+  placed_at: string
+  total: number
+  item_count: number
+  items: HistoryOrderItem[]
+}
+
 export type KitchenOrderItem = {
   id: number
   name: string

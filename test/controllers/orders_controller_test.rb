@@ -154,6 +154,40 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/order"
   end
 
+  # --- 注文履歴（本人限定。現在進行中＋過去のスナップショット） ---
+
+  test "未ログインの /order/history はログイン誘導へ" do
+    get "/order/history"
+    assert_redirected_to line_login_path
+  end
+
+  test "履歴は自分の注文だけを新しい順に返す" do
+    taro = line_accounts(:taro)
+    old_order = create_takeout_order(taro, number: "#H-1", placed_at: 2.days.ago)
+    new_order = create_takeout_order(taro, number: "#H-2", placed_at: 1.hour.ago, status: :in_progress)
+    create_takeout_order(line_accounts(:hanako), number: "#H-3") # 他人の注文は含まれない
+
+    line_login_as(taro)
+    get "/order/history"
+
+    assert_response :success
+    assert_inertia_component "orders/History"
+    assert_equal [ new_order.id, old_order.id ], inertia.props[:orders].map { |o| o[:id] }
+  end
+
+  test "履歴の各注文は kitchen progress の現在状態と明細・合計を持つ" do
+    order = create_takeout_order(line_accounts(:taro), number: "#H-4", status: :ready)
+    line_login_as(line_accounts(:taro))
+
+    get "/order/history"
+
+    row = inertia.props[:orders].find { |o| o[:id] == order.id }
+    assert_equal "ready", row[:status]
+    assert_equal order.display_number, row[:order_number]
+    assert_equal 1, row[:items].length
+    assert_equal order.total, row[:total]
+  end
+
   private
 
   # takeout モードでログイン済みのカートを用意する（checkout 系テストの前段）
