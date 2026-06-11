@@ -41,7 +41,14 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - POSTGRES_PASSWORD
+    # LINE ミニアプリ連携（ADR-0008 / 0009）。credentials の line: 以下から .kamal/secrets 経由で注入
+    - LINE_CHANNEL_ID
+    - LINE_CHANNEL_SECRET
+    - LINE_LIFF_ID
   clear:
+    # サービスメッセージのテンプレート名（秘密ではないので clear で直接指定）
+    LINE_READY_TEMPLATE_NAME: order_remind_s_o_ja
+
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
     SOLID_QUEUE_IN_PUMA: true
