@@ -6,16 +6,58 @@ import type { SharedProps } from '@/types'
 
 interface LineLoginProps {
   liff_id: string | null
+  logged_in: boolean
+  entry_path: string
 }
+
+// ログイン済み再訪の入場を liff.init の完了待ちで足止めしない上限。init は通常1秒前後で
+// 終わる。settle しない回線ではこれを超えたら入場し、init は裏で続行させる
+// （成功すれば checkout でトークンが取れる。旧実装の 302 は即入場だったので、その劣化を防ぐ）
+const LOGGED_IN_ENTRY_TIMEOUT_MS = 5000
 
 // テイクアウト面のログイン誘導ページ（ADR-0008）。LIFF 内で開かれていれば
 // liff.init → liff.login →（リダイレクト復帰後）ID トークンをサーバーへ POST して
 // セッションを確立し、元のページへ自動で戻る。客に見える摩擦は原則ない。
-export default function LineLogin({ liff_id }: LineLoginProps) {
+//
+// ログイン済み（再訪）でもサーバーは 302 せずこのページを描画する（イシュー #35）。
+// エンドポイント URL 上で liff.init を済ませてから入場しないと、注文確定時に
+// エンドポイント階層外で初 init が走り LINE が 400 を返すため。
+export default function LineLogin({ liff_id, logged_in, entry_path }: LineLoginProps) {
   const { flash } = usePage<SharedProps>().props
   const [error, setError] = useState<string | null>(null)
 
   const startLogin = useCallback(() => {
+    // 入場。router.visit で同一 SPA コンテキストを保つ（initLiff のキャッシュが
+    // checkout まで生きる）。replace で誘導ページを履歴に残さない。
+    // タイムアウトと init 完了の両方から呼ばれうるため一度きりに guard する
+    let entered = false
+    const enter = () => {
+      if (entered) return
+      entered = true
+      router.visit(entry_path, { replace: true })
+    }
+
+    if (logged_in) {
+      // ログイン済み再訪: Rails セッションがあるので ID トークンの再 POST は不要。
+      // エンドポイント URL 上で init を済ませてから入場するが、入場自体は init の成否に
+      // 依存させない — 失敗時は通知なしの劣化動作で続行する（checkout 側は
+      // getLiffAccessToken が失敗済みコンテキストで再 init しないため 400 にならない）
+      if (!liff_id) {
+        enter()
+        return
+      }
+      const timer = window.setTimeout(enter, LOGGED_IN_ENTRY_TIMEOUT_MS)
+      initLiff(liff_id)
+        .catch(() => {
+          // 外部ブラウザ等で init できなくても入場は止めない
+        })
+        .finally(() => {
+          window.clearTimeout(timer)
+          enter()
+        })
+      return
+    }
+
     if (!liff_id) {
       setError('LINE ミニアプリの設定が見つかりません。LINE のテイクアウト用リンクから開き直してください。')
       return
@@ -38,7 +80,7 @@ export default function LineLogin({ liff_id }: LineLoginProps) {
       .catch(() => {
         setError('LINE ログインを開始できませんでした。LINE アプリ内から開き直してください。')
       })
-  }, [liff_id])
+  }, [liff_id, logged_in, entry_path])
 
   useEffect(() => {
     // サーバー側の検証失敗で戻されたとき（flash.alert あり）に自動再試行すると

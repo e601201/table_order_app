@@ -14,10 +14,15 @@ class LineSessionsController < ApplicationController
   TAKEOUT_ENTRY = "/order?order_type=takeout".freeze
 
   # ログイン誘導ページ。LIFF 内で liff.init → liff.login → ID トークンを POST して復帰する。
+  # ログイン済み（再訪）でもここで 302 せず必ず描画する — エンドポイント URL 上で liff.init を
+  # 済ませてからクライアント側で入場しないと、注文確定時にエンドポイント階層外で初 init が走り
+  # LINE が 400 を返す（イシュー #35）。
   def new
-    return redirect_to(TAKEOUT_ENTRY) if line_logged_in?
-
-    render inertia: "orders/LineLogin", props: { liff_id: ENV["LINE_LIFF_ID"] }
+    render inertia: "orders/LineLogin", props: {
+      liff_id: ENV["LINE_LIFF_ID"],
+      logged_in: line_logged_in?,
+      entry_path: TAKEOUT_ENTRY
+    }
   end
 
   def create
