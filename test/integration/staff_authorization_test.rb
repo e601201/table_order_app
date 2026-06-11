@@ -1,11 +1,13 @@
 require "test_helper"
 
 class StaffAuthorizationTest < ActionDispatch::IntegrationTest
-  test "/order と / は未ログインでも公開されている" do
+  # takeout 面は ADR-0008 で LINE ログイン必須になったため、公開なのは In-store のみ
+  # （takeout のゲートは orders_controller_test で担保）。
+  test "/order（In-store）と / は未ログインでも公開されている" do
     get root_path
     assert_response :success
 
-    get "/order", params: { order_type: "takeout" }
+    get "/order", params: { order_type: "in_store", table_number: 5 }
     assert_response :success
   end
 

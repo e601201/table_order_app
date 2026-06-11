@@ -67,6 +67,11 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
+  # LIFF の実機検証用に ngrok 経由のアクセスを許可する（ADR-0008: 開発中から実 LIFF 接続）。
+  # 先頭ドットはサブドメイン全体にマッチする。
+  config.hosts << ".ngrok-free.app"
+  config.hosts << ".ngrok.app"
+
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
 

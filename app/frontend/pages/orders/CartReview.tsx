@@ -1,16 +1,18 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, Check } from 'lucide-react'
+import { initLiff, liff } from '@/lib/liff'
 import type { CartLine, CartTotals, OrderType } from '@/types'
 
 interface CartReviewProps {
   table_number: number | null
   order_type: OrderType
+  liff_id: string | null
   cart_items: CartLine[]
   totals: CartTotals
 }
 
-export default function CartReview({ table_number, order_type, cart_items, totals }: CartReviewProps) {
+export default function CartReview({ table_number, order_type, liff_id, cart_items, totals }: CartReviewProps) {
   const [specialInstructions, setSpecialInstructions] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
@@ -29,8 +31,19 @@ export default function CartReview({ table_number, order_type, cart_items, total
     router.delete(`/order/cart/${line.line_id}`, { preserveScroll: true })
   }
 
-  const placeOrder = () => {
-    router.post('/order/checkout')
+  const placeOrder = async () => {
+    // takeout は OrderReady のサービスメッセージ送信用に LIFF アクセストークンを同送する
+    // （ADR-0008）。取得できなくても注文は止めない — 通知なしで続行する。
+    let liffAccessToken: string | null = null
+    if (order_type === 'takeout' && liff_id) {
+      try {
+        await initLiff(liff_id)
+        liffAccessToken = liff.getAccessToken()
+      } catch {
+        liffAccessToken = null
+      }
+    }
+    router.post('/order/checkout', liffAccessToken ? { liff_access_token: liffAccessToken } : {})
   }
 
   return (

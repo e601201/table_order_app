@@ -51,18 +51,74 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     assert_not order.reload.paid?
   end
 
+  # --- テイクアウトは Ready から会計＝手渡し（ADR-0009）。会計が Served + Paid を
+  # 同一アクションで進め、Served + Unpaid の中間状態を作らない ---
+
+  test "Ready かつ未会計のテイクアウトは会計確認画面を表示できる" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+
+    get cashier_payment_path(order)
+    assert_response :success
+    assert_inertia_component "cashier/PaymentConfirm"
+  end
+
+  test "テイクアウトの会計処理は Served と Paid に同時遷移する" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+
+    post cashier_payment_path(order), params: { payment_method: "cash" }
+    assert_redirected_to cashier_payment_complete_path(order)
+
+    order.reload
+    assert_predicate order, :served?
+    assert_predicate order, :paid?
+  end
+
+  test "調理中のテイクアウトは会計できずレジ盤面へ戻す" do
+    login_as(:cashier_staff)
+    order = create_order(status: :in_progress, paid: false, order_type: :takeout)
+
+    post cashier_payment_path(order), params: { payment_method: "cash" }
+    assert_redirected_to cashier_path
+    assert_not order.reload.paid?
+  end
+
+  test "旧フローの Served + Unpaid なテイクアウトは会計ガードを通らない（リセット容認）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :served, paid: false, order_type: :takeout)
+
+    get cashier_payment_path(order)
+    assert_redirected_to cashier_path
+  end
+
+  test "テイクアウトの会計では LINE 通知を送らない（呼び出しは OrderReady で済んでいる）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+
+    called = false
+    LineServiceMessenger.stub(:send_ready_message, ->(*_args) { called = true }) do
+      post cashier_payment_path(order), params: { payment_method: "cash" }
+    end
+
+    assert_not called
+    assert_predicate order.reload, :served?
+  end
+
   private
 
   def login_as(fixture_name)
     post login_path, params: { login_id: staffs(fixture_name).login_id, password: "password" }
   end
 
-  def create_order(status:, paid:, total: 1000)
+  def create_order(status:, paid:, total: 1000, order_type: :in_store)
+    takeout = order_type == :takeout
     placed_at = Time.zone.now
     order = Order.create!(
       order_number: "#C-#{SecureRandom.hex(3)}",
-      order_type: :in_store,
-      table_number: 5,
+      order_type: order_type,
+      table_number: takeout ? nil : 5,
+      line_account: takeout ? line_accounts(:taro) : nil,
       status: status,
       subtotal: total,
       tax: 0,

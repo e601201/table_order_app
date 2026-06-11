@@ -102,6 +102,11 @@ puts "Menu を #{MenuItem.count} 件シードしました"
 if Rails.env.development?
   Order.where("order_number LIKE ?", "#DEMO-%").destroy_all
 
+  # テイクアウトのデモ注文用 LineAccount（Takeout Order は LineAccount 必須。ADR-0008）
+  demo_line_account = LineAccount.find_or_create_by!(line_user_id: "U-demo-0000000000000000000001") do |account|
+    account.display_name = "デモ太郎"
+  end
+
   # menu_item_id => [ 商品名（order_items.name はスナップショット）, 単価 ]
   catalog = {
     1 => [ "クラシックバーガー", 580 ],
@@ -123,6 +128,7 @@ if Rails.env.development?
       order_number: format("#DEMO-%03d", demo_seq),
       order_type: table_number ? :in_store : :takeout,
       table_number: table_number,
+      line_account: table_number ? nil : demo_line_account, # takeout は LineAccount 必須（ADR-0008）
       status: status,
       subtotal: subtotal,
       tax: tax,
@@ -175,6 +181,7 @@ if Rails.env.development?
   build_demo_order.call(placed_at: day_at.call(today, 13), status: :in_progress, table_number: 7, lines: [ [ 1, 1 ], [ 5, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 14), status: :ready, table_number: 9, lines: [ [ 2, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 15), status: :served, table_number: 10, lines: [ [ 6, 3 ] ]) # 提供済み・未会計（会計待ち）
+  build_demo_order.call(placed_at: day_at.call(today, 16), status: :ready, lines: [ [ 3, 1 ], [ 7, 1 ] ]) # テイクアウト・できあがり（Ready + Unpaid = 会計待ち。ADR-0009）
 
   puts "デモ注文を #{Order.where('order_number LIKE ?', '#DEMO-%').count} 件シードしました（dev のみ）"
 end

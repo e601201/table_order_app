@@ -1,0 +1,9 @@
+# LineAccount = Takeout 時に Customer が名乗る永続化された LINE 身元（ADR-0008）。
+# line_user_id は LINE の userId（"U" + 32桁 hex）。テストでは形だけ模す。
+taro:
+  line_user_id: U00000000000000000000000000000001
+  display_name: タロウ
+
+hanako:
+  line_user_id: U00000000000000000000000000000002
+  display_name: ハナコ

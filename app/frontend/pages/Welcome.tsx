@@ -28,12 +28,7 @@ export default function Welcome({ app_name }: WelcomeProps) {
               >
                 テーブルからの注文
               </Link>
-              <Link
-                href="/order?order_type=takeout"
-                className="block w-full text-center px-4 py-3 rounded-lg bg-[#FB8C00] text-white font-medium shadow-sm hover:opacity-90 transition"
-              >
-                テイクアウトからの注文
-              </Link>
+              {/* テイクアウトへの到達経路は LINE ミニアプリ（LIFF URL）のみ（ADR-0008） */}
             </div>
           </section>
 

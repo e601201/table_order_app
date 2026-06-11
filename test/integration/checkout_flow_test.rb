@@ -31,8 +31,9 @@ class CheckoutFlowTest < ActionDispatch::IntegrationTest
     assert_equal 1460, item.line_total
   end
 
-  test "takeout のカートを checkout すると table_number が nil の Order が absence 検証を通って作られる" do
-    # ウェルカム導線と同じく order_type をセッションに焼く（home の clear_cart より先に）
+  test "takeout のカートを checkout すると LineAccount に紐づき table_number が nil の Order が作られる" do
+    # takeout は LINE ログイン必須（ADR-0008）。LIFF 導線と同じく order_type をセッションに焼く
+    line_login_as(line_accounts(:taro))
     get "/order", params: { order_type: "takeout" }
     post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
 
@@ -43,6 +44,7 @@ class CheckoutFlowTest < ActionDispatch::IntegrationTest
     order = Order.last
     assert_equal "takeout", order.order_type
     assert_nil order.table_number # controller の takeout→nil 整合が absence バリデーションを満たす
+    assert_equal line_accounts(:taro), order.line_account # 持ち主識別（#29 の Takeout 側解消）
     assert_redirected_to "/order/complete/#{order.id}"
   end
 
