@@ -9,6 +9,8 @@ class LineSessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_inertia_component "orders/LineLogin"
+    # 未ログインでは logged_in: false — クライアントは現行どおり liff.login → ID トークン POST へ進む
+    assert_inertia_props logged_in: false, entry_path: "/order?order_type=takeout"
   end
 
   test "有効な ID トークンで LineAccount が作成されセッションが確立する" do
@@ -52,11 +54,15 @@ class LineSessionsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to "/order?order_type=takeout"
   end
 
-  test "ログイン済みでログイン誘導ページを開くと takeout のメニューへ戻す" do
-    # LIFF エンドポイントは /order/line_login なので、2回目以降のミニアプリ起動はここに来る
+  test "ログイン済みでもログイン誘導ページを描画し logged_in と入場先を渡す" do
+    # LIFF エンドポイントは /order/line_login なので、2回目以降のミニアプリ起動もここに来る。
+    # ここで 302 すると liff.init がエンドポイント URL 上で一度も走らず、注文確定時に
+    # エンドポイント階層外で初 init → LINE が 400 を返す（イシュー #35）。入場はクライアント側で行う。
     line_login_as(line_accounts(:taro))
 
     get line_login_path
-    assert_redirected_to "/order?order_type=takeout"
+    assert_response :success
+    assert_inertia_component "orders/LineLogin"
+    assert_inertia_props logged_in: true, entry_path: "/order?order_type=takeout"
   end
 end
