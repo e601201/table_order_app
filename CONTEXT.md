@@ -27,7 +27,7 @@ The role that advances kitchen progress: `Pending → In progress → Ready` for
 _Avoid_: Chef, cook, galley, 厨房, 調理場, 調理 (the act of cooking is "preparing"; the role surface is "Kitchen / キッチン")
 
 **Cashier** (canonical Japanese: **レジ**):
-The role that advances the payment axis (`Unpaid → Paid`). Works against the queue of `Served + Unpaid` `In-store` orders and `Ready + Unpaid` `Takeout` orders. For an `In-store` order it never touches the kitchen-progress axis; for a `Takeout` order its `Settlement` doubles as the handover, advancing `Ready → Served` and `Unpaid → Paid` in the same act.
+The role that ends the payment axis — and the only role that writes either of its terminals: `Unpaid → Paid` via `Settlement`, or `Unpaid → Closed` via `打ち切り` (Close). Works against the queue of `Served + Unpaid` `In-store` orders and `Ready + Unpaid` `Takeout` orders. For an `In-store` order it never touches the kitchen-progress axis; for a `Takeout` order its `Settlement` doubles as the handover, advancing `Ready → Served` and `Unpaid → Paid` in the same act. The `Kitchen` never closes an order — an out-of-stock discovery travels by voice to the register, where the Cashier closes it.
 _Avoid_: Register, checkout, 会計係, 会計スタッフ, 会計 (the **role** name is "レジ"; "会計" is reserved for the act of settling — see the Flagged ambiguities)
 
 **Admin** (canonical Japanese: **管理者**):
@@ -99,12 +99,16 @@ _Avoid_: Completed, done, finished (these all wrongly imply the transaction is o
 ### Payment status (axis 2)
 
 **Unpaid**:
-The order has not yet been settled at the cashier. Default for every newly placed order. An order remains `Unpaid` regardless of how far it has progressed on the kitchen axis — a `Pending + Unpaid` order is a freshly placed unstarted order, and a `Served + Unpaid` order is one waiting at the cashier.
+The order has not yet been settled at the cashier. Default for every newly placed order. An order remains `Unpaid` regardless of how far it has progressed on the kitchen axis — a `Pending + Unpaid` order is a freshly placed unstarted order, and a `Served + Unpaid` order is one waiting at the cashier. `Unpaid` ends in exactly one of two ways, both written at the register: `Paid` (via `Settlement`) or `Closed` (via `打ち切り`).
 _Avoid_: Outstanding, owed, open
 
 **Paid**:
 The cashier has settled the order. Represented today by a non-null `paid_at` timestamp; an order becomes `Paid` only after it is `Served` (the cashier surface enforces this guard).
 _Avoid_: Settled, closed, completed (clashes with the kitchen-axis name; never use "completed" for the payment side)
+
+**Closed** (canonical Japanese: **打ち切り済み**):
+The second terminal of the payment axis: staff has closed the order without payment. A closed order never progresses — the only way out is `Reopen` (see `Close`), which is a correction of a premature closure, not a progression: it returns the order to `Unpaid` as if the closure had not happened. `Unpaid` ends in exactly one of two ways — `Paid` (via `Settlement`) or `Closed` (via `打ち切り`). It is **one concept** regardless of why; the why is carried by a mandatory closure reason with exactly four values, each naming a distinct kind of loss: `no_show` (food was made and discarded — the `Takeout` customer never came), `out_of_stock` (the kitchen could not make it — supply failure), `customer_request` (the customer asked staff to withdraw the order, mis-taps included — there is no staff order entry in this system, so an "entry error" is always a customer request), and `walkout` (the food was served and consumed but never settled — an uncollected receivable). There is no `other` and no free-text note. Closing never touches the kitchen-progress axis — the order freezes wherever it stood, preserving true history: a no-show `Takeout` order freezes at `Ready` (the food really was made), a walkout `In-store` order freezes at `Served` (the food really was handed over and eaten), an out-of-stock closure freezes at `Pending` or `In progress` (cooking never finished). `Paid` and `Closed` are mutually exclusive; a `Paid` order can never be closed (refunds do not exist in this system). Customer-facing copy: the LINE order history shows a closed order with a single **「キャンセル」** badge regardless of reason — acceptable as a UI alias precisely because the one case where "cancel" would lie (`walkout`) is `In-store`-only, and an `In-store` customer has no history surface; the lying combination can never be displayed. Staff surfaces say 打ち切り.
+_Avoid_: Cancelled / キャンセル as the canonical name (lies for the walkout case — the food was served and consumed, nothing was "called off"; permitted only as the customer-facing UI badge above), Void / ボイド (industry jargon implying the debt never existed, wrong for walkout / no-show), Completed (axis-name clash — see `Paid`)
 
 **Settlement** (canonical Japanese: **会計**):
 The act of taking a `Served + Unpaid` order to `Paid`. The canonical Japanese name is **会計**. Three Japanese words are in casual circulation around this act — they are not interchangeable here:
@@ -114,6 +118,10 @@ The act of taking a `Served + Unpaid` order to `Paid`. The canonical Japanese na
 - **決済** — reserved for **compound technical terms** ("クレジット決済"). Never use bare "決済" for the act itself.
 
 _Avoid_: Bare "決済" for the act, "会計" for the role (the role is "レジ" — see Roles)
+
+**Close** (canonical Japanese: **打ち切り**):
+The `Cashier`'s act of taking an `Unpaid` order to `Closed` — ending the payment axis without money. Mirror of `Settlement`: the register writes both terminals of the payment axis, with payment (会計) or without (打ち切り). A mandatory closure reason records why. Performed only from the cashier surface; neither the `Kitchen` nor the `Customer` can close an order, and `/admin/orders` stays read-only (an `Admin` who must close an order switches to the cashier surface). The act has an inverse, **Reopen** (canonical Japanese: **打ち切り解除**), also Cashier-only: it returns a `Closed` order to `Unpaid`, and the order rejoins whatever queue its (frozen, untouched) kitchen state implies. The canonical reopen scenario: a `Takeout` order closed as `no_show`, after which the customer turns up minutes later — the closure was a premature judgment, and reopening lets the normal `Settlement` proceed.
+_Avoid_: キャンセル / Cancel as the act name (see `Closed`), 取消 (same lie for the walkout case), 締め (that is end-of-day register work, not a per-order act)
 
 ### Domain events
 
@@ -128,6 +136,10 @@ _Avoid_: "Ready notification" as the noun (the noun is the event; the LINE messa
 **OrderServed**:
 The event raised when the `Order` transitions from `Ready` to `Served` — i.e. the food has been handed to the customer. For an `In-store` order it is raised by the `Kitchen` carrying the food to the table, and it is the signal that puts the order into the cashier's work queue. For a `Takeout` order it is raised by the `Cashier`'s own `Settlement` (handover and payment are one act), so it never enters a queue — the queue-entry signal for `Takeout` is `OrderReady`.
 _Avoid_: "Order completed" (clashes with the everyday-Japanese "完了"), order-delivered (used as alias only in customer-facing copy if needed)
+
+**OrderClosed**:
+The event raised when the `Cashier` closes an `Unpaid` order (`打ち切り` — see `Close`). It carries the closure reason. **No subscriber today** — like `OrderReady` for an `In-store` order, nothing observes it; the obvious future subscriber is an out-of-stock LINE message stopping a `Takeout` customer already on their way, which can be added without touching the state machine. `Reopen` raises no event — it is a correction, and nothing observes it either.
+_Avoid_: order-cancelled (see `Closed` for why "cancel" is not the canonical word), "クローズ通知" (notification is a propagation concern — see 通知 in Flagged ambiguities)
 
 ### Flagged ambiguities
 
@@ -179,6 +191,18 @@ A walk-through of a typical evening flow between a developer (D) and the operati
 **D**: テイクアウトの注文だと何が違いますか？
 
 **M**: `Order type` が `Takeout` になり、`table_number` の代わりに注文した `LineAccount` が付く。キッチンの仕事は `Ready` まで — そこで `OrderReady` が LINE で客を呼び出す。カウンターでの手渡しはレジの `会計` と同じ瞬間に起きるから、`Ready` のテイクアウト注文をレジが会計すると `Served` と `Paid` に同時に進む。`Served` の意味自体は同じ — 客の手に料理が渡った瞬間 — で、テイクアウトの客向けにはそれを「受取済み」と表示する。
+
+**D**: 19時に「お作りできました」を送ったテイクアウトの客が、20時になっても現れません。この注文はどうなりますか？
+
+**M**: レジがその注文を理由 `no_show` で打ち切る。payment 軸が `Closed` になって会計待ちキューから消える。kitchen 軸は `Ready` のまま凍結 — 料理が実際にできていたという歴史は消さない。客の LINE 履歴では「キャンセル」バッジになる。
+
+**D**: その10分後に客が「渋滞で遅れました」と現れたら？
+
+**M**: 打ち切り解除（Reopen）。`Unpaid` に戻り、kitchen 軸は `Ready` のままだから会計待ちに再出現する。あとは普通に会計すれば `Served + Paid`。打ち切りが早すぎたというだけの話で、注文を作り直したりはしない。
+
+**D**: 食い逃げも「キャンセル」と呼びますか？
+
+**M**: 呼ばない。あれは理由 `walkout` の打ち切り — 料理は提供済みで消費されているから、「なかったことにする」という意味のキャンセルでは言葉が嘘をつく。状態としては同じ `Closed` で、理由コードが廃棄（no_show）と未収（walkout）の損失の違いを記録する。
 
 **D**: 「完了」という言葉は UI のどこに使えますか？
 
