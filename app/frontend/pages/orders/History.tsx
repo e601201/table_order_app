@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
-import { takeoutCustomerStatusMeta } from '@/lib/orderStatus'
+import { customerClosedBadge, takeoutCustomerStatusMeta } from '@/lib/orderStatus'
 import type { HistoryOrder } from '@/types'
 
 interface HistoryProps {
@@ -58,8 +58,9 @@ export default function History({ display_name, orders }: HistoryProps) {
           )}
 
           {orders.map((order) => {
-            // 履歴はテイクアウト専用面 — 終端は「受取済み」（ADR-0009）
-            const status = takeoutCustomerStatusMeta[order.status]
+            // 履歴はテイクアウト専用面 — 終端は「受取済み」（ADR-0009）。
+            // 打ち切り済みは理由を問わず「キャンセル」1種（ADR-0010）。
+            const status = order.closed ? customerClosedBadge : takeoutCustomerStatusMeta[order.status]
             return (
               <div
                 key={order.id}

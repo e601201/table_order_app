@@ -3,22 +3,30 @@ import { useEffect, useMemo, useState } from 'react'
 import { Search, RefreshCw, CreditCard, X, ChefHat, LogOut } from 'lucide-react'
 import StaffSurfaceNav from '@/components/StaffSurfaceNav'
 import FlashMessage from '@/components/FlashMessage'
-import type { CashierOrder, PaymentStatus } from '@/types'
+import { closureReasonLabel, closureReasonsByOrderType, kitchenStatusMeta } from '@/lib/orderStatus'
+import type { CashierOrder, ClosureReason, PaymentStatus } from '@/types'
 
 // --- サブコンポーネント ---
 
+// payment 軸の3状態（ADR-0010）。スタッフ面の Closed は「打ち切り」（キャンセルとは呼ばない）。
+const paymentBadgeStyles: Record<PaymentStatus, { backgroundColor: string; color: string; label: string }> = {
+  unpaid: { backgroundColor: '#fef2f2', color: '#dc2626', label: '未払い' },
+  paid: { backgroundColor: '#f0fdf4', color: '#16a34a', label: '支払い済み' },
+  closed: { backgroundColor: '#f5f5f5', color: '#525252', label: '打ち切り' },
+}
+
 function StatusBadge({ status }: { status: PaymentStatus }) {
-  const isUnpaid = status === 'unpaid'
+  const style = paymentBadgeStyles[status]
   return (
     <span
       className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold"
       style={{
         fontFamily: 'Inter, sans-serif',
-        backgroundColor: isUnpaid ? '#fef2f2' : '#f0fdf4',
-        color: isUnpaid ? '#dc2626' : '#16a34a',
+        backgroundColor: style.backgroundColor,
+        color: style.color,
       }}
     >
-      {isUnpaid ? '未払い' : '支払い済み'}
+      {style.label}
     </span>
   )
 }
@@ -94,10 +102,18 @@ function OrderTable({
 function OrderSummary({
   order,
   onCancel,
+  onClose,
+  onReopen,
 }: {
   order: CashierOrder | null
   onCancel: () => void
+  onClose: (reason: ClosureReason) => void
+  onReopen: () => void
 }) {
+  // 打ち切りは2段階（パネルを開く → 理由を選んで確定）。誤タップで注文を閉じない。
+  const [closePanelOpen, setClosePanelOpen] = useState(false)
+  const [closeReason, setCloseReason] = useState<ClosureReason | null>(null)
+
   if (!order) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: '#a3a3a3' }}>
@@ -110,6 +126,9 @@ function OrderSummary({
   }
 
   const isPaid = order.payment_status === 'paid'
+  const isClosed = order.payment_status === 'closed'
+  // 会計の前提（ADR-0009）のミラー: In-store は Served、Takeout は Ready。
+  const payable = order.order_type === 'takeout' ? order.status === 'ready' : order.status === 'served'
 
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -207,7 +226,7 @@ function OrderSummary({
 
       {/* アクションボタン */}
       <div className="px-5 pb-5 flex flex-col gap-2">
-        {isPaid ? (
+        {isPaid && (
           <div
             className="flex items-center justify-center gap-2 w-full rounded-lg"
             style={{
@@ -221,22 +240,146 @@ function OrderSummary({
           >
             支払い済み · ¥{order.total.toLocaleString()}
           </div>
-        ) : (
-          <Link
-            href={`/cashier/payment/${order.id}`}
-            className="flex items-center justify-center gap-2 w-full rounded-lg"
-            style={{
-              height: 48,
-              backgroundColor: '#171717',
-              color: '#fafafa',
-              fontFamily: 'Inter, sans-serif',
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            <CreditCard size={18} />
-            決済に進む — ¥{order.total.toLocaleString()}
-          </Link>
+        )}
+
+        {/* 打ち切り済み: 解除（reopen）だけができる。正準シナリオは no-show 後の来店（ADR-0010） */}
+        {isClosed && (
+          <>
+            <div
+              className="flex items-center justify-center gap-2 w-full rounded-lg"
+              style={{
+                height: 48,
+                backgroundColor: '#f5f5f5',
+                color: '#525252',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              打ち切り済み{order.closure_reason ? ` · ${closureReasonLabel[order.closure_reason]}` : ''}
+            </div>
+            <button
+              onClick={onReopen}
+              className="flex items-center justify-center w-full rounded-lg"
+              style={{
+                height: 44,
+                backgroundColor: 'transparent',
+                border: '1px solid #e5e5e5',
+                color: '#0a0a0a',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              打ち切り解除（会計に戻す）
+            </button>
+          </>
+        )}
+
+        {!isPaid && !isClosed && (
+          <>
+            {payable ? (
+              <Link
+                href={`/cashier/payment/${order.id}`}
+                className="flex items-center justify-center gap-2 w-full rounded-lg"
+                style={{
+                  height: 48,
+                  backgroundColor: '#171717',
+                  color: '#fafafa',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 14,
+                  fontWeight: 600,
+                }}
+              >
+                <CreditCard size={18} />
+                決済に進む — ¥{order.total.toLocaleString()}
+              </Link>
+            ) : (
+              <div
+                className="flex items-center justify-center w-full rounded-lg"
+                style={{
+                  height: 48,
+                  backgroundColor: '#fafafa',
+                  border: '1px dashed #e5e5e5',
+                  color: '#a3a3a3',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                {order.order_type === 'takeout' ? kitchenStatusMeta.ready.label : kitchenStatusMeta.served.label}
+                になると会計できます（現在: {kitchenStatusMeta[order.status].label}）
+              </div>
+            )}
+
+            {/* 打ち切り（ADR-0010）: 理由は order type で構造的に絞る */}
+            {closePanelOpen ? (
+              <div
+                className="flex flex-col gap-2 rounded-lg p-3"
+                style={{ border: '1px solid #e5e5e5', backgroundColor: '#ffffff' }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#525252' }}>打ち切り理由を選択</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {closureReasonsByOrderType[order.order_type].map((reason) => (
+                    <button
+                      key={reason}
+                      onClick={() => setCloseReason(reason)}
+                      className="rounded-md px-2.5 py-1.5"
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        backgroundColor: closeReason === reason ? '#171717' : '#f5f5f5',
+                        color: closeReason === reason ? '#fafafa' : '#525252',
+                      }}
+                    >
+                      {closureReasonLabel[reason]}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    disabled={!closeReason}
+                    onClick={() => closeReason && onClose(closeReason)}
+                    className="flex-1 rounded-md py-2"
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      backgroundColor: closeReason ? '#fef2f2' : '#f5f5f5',
+                      color: closeReason ? '#dc2626' : '#a3a3a3',
+                    }}
+                  >
+                    打ち切りを確定
+                  </button>
+                  <button
+                    onClick={() => {
+                      setClosePanelOpen(false)
+                      setCloseReason(null)
+                    }}
+                    className="rounded-md px-4 py-2"
+                    style={{ fontSize: 13, fontWeight: 500, color: '#737373', backgroundColor: 'transparent' }}
+                  >
+                    やめる
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setClosePanelOpen(true)}
+                className="flex items-center justify-center w-full rounded-lg"
+                style={{
+                  height: 40,
+                  backgroundColor: 'transparent',
+                  border: '1px solid #e5e5e5',
+                  color: '#737373',
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                この注文を打ち切る
+              </button>
+            )}
+          </>
         )}
         <button
           onClick={onCancel}
@@ -259,30 +402,46 @@ function OrderSummary({
 
 // --- メインコンポーネント ---
 
-export default function CashierDashboard({ orders }: { orders: CashierOrder[] }) {
+// 一覧の切り替え（ADR-0010）: 本日の会計（キュー∪会計済み）/ キュー外の未払い（品切れ等の
+// 打ち切り対象に届く導線）/ 打ち切り済み（打ち切り解除の到達経路）。
+type DashboardView = 'today' | 'outside' | 'closed'
+
+export default function CashierDashboard({
+  orders,
+  outsideQueueOrders,
+  closedOrders,
+}: {
+  orders: CashierOrder[]
+  outsideQueueOrders: CashierOrder[]
+  closedOrders: CashierOrder[]
+}) {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [view, setView] = useState<DashboardView>('today')
 
-  // 会計待ちキュー（Served + Unpaid）を手動更新なしで最新化（ADR-0007）。
-  // 下部の手動「更新」ボタンは残しつつ、ポーリングで orders のみ部分リロード。
+  // 会計待ちキューを手動更新なしで最新化（ADR-0007）。
+  // 下部の手動「更新」ボタンは残しつつ、ポーリングで注文系 props のみ部分リロード。
   useEffect(() => {
     const id = setInterval(() => {
-      router.reload({ only: ['orders'] })
+      router.reload({ only: ['orders', 'outsideQueueOrders', 'closedOrders'] })
     }, 7000)
     return () => clearInterval(id)
   }, [])
 
+  const viewOrders = view === 'today' ? orders : view === 'outside' ? outsideQueueOrders : closedOrders
+
   const filteredOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders
+    if (!searchQuery.trim()) return viewOrders
     const q = searchQuery.toLowerCase()
-    return orders.filter((order) => {
+    return viewOrders.filter((order) => {
       if (order.order_number.toLowerCase().includes(q)) return true
       if (order.order_type === 'takeout') return 'takeout'.includes(q)
       return order.table_number !== null && String(order.table_number).includes(q)
     })
-  }, [orders, searchQuery])
+  }, [viewOrders, searchQuery])
 
-  const selectedOrder = orders.find((o) => o.id === selectedOrderId) ?? null
+  const selectedOrder =
+    [...orders, ...outsideQueueOrders, ...closedOrders].find((o) => o.id === selectedOrderId) ?? null
   const unpaidCount = orders.filter((o) => o.payment_status === 'unpaid').length
 
   const now = new Date()
@@ -373,6 +532,31 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
               </button>
             </div>
 
+            {/* 一覧タブ（ADR-0010） */}
+            <div className="flex items-center gap-2 px-5 py-2" style={{ borderBottom: '1px solid #e5e5e5' }}>
+              {(
+                [
+                  { key: 'today', label: '本日の会計', count: orders.length },
+                  { key: 'outside', label: 'キュー外の未払い', count: outsideQueueOrders.length },
+                  { key: 'closed', label: '打ち切り済み', count: closedOrders.length },
+                ] as { key: DashboardView; label: string; count: number }[]
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setView(tab.key)}
+                  className="rounded-lg px-3 py-1.5"
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    backgroundColor: view === tab.key ? '#171717' : '#f5f5f5',
+                    color: view === tab.key ? '#fafafa' : '#525252',
+                  }}
+                >
+                  {tab.label} {tab.count}
+                </button>
+              ))}
+            </div>
+
             {/* テーブル */}
             <div className="flex-1 overflow-y-auto">
               {filteredOrders.length === 0 ? (
@@ -401,7 +585,7 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
                 未払い注文 {unpaidCount} 件
               </span>
               <button
-                onClick={() => router.reload({ only: ['orders'] })}
+                onClick={() => router.reload({ only: ['orders', 'outsideQueueOrders', 'closedOrders'] })}
                 className="flex items-center gap-1.5"
                 style={{ fontSize: 12, fontWeight: 600, color: '#525252' }}
               >
@@ -417,8 +601,19 @@ export default function CashierDashboard({ orders }: { orders: CashierOrder[] })
             style={{ borderLeft: '1px solid #e5e5e5', backgroundColor: '#fafafa' }}
           >
             <OrderSummary
+              key={selectedOrder?.id ?? 'none'}
               order={selectedOrder}
               onCancel={() => setSelectedOrderId(null)}
+              onClose={(reason) => {
+                if (selectedOrder) {
+                  router.post(`/cashier/orders/${selectedOrder.id}/close`, { closure_reason: reason })
+                }
+              }}
+              onReopen={() => {
+                if (selectedOrder) {
+                  router.post(`/cashier/orders/${selectedOrder.id}/reopen`)
+                }
+              }}
             />
           </aside>
         </div>

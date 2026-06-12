@@ -120,7 +120,8 @@ if Rails.env.development?
   }
 
   demo_seq = 0
-  build_demo_order = lambda do |placed_at:, status:, lines:, paid_at: nil, table_number: nil|
+  build_demo_order = lambda do |placed_at:, status:, lines:, paid_at: nil, table_number: nil,
+                                 closed_at: nil, closure_reason: nil|
     demo_seq += 1
     subtotal = lines.sum { |id, qty| catalog.fetch(id)[1] * qty }
     tax = (subtotal * 0.1).round
@@ -135,7 +136,9 @@ if Rails.env.development?
       total: subtotal + tax,
       placed_at: placed_at,
       paid_at: paid_at,
-      payment_method: paid_at ? "cash" : nil
+      payment_method: paid_at ? "cash" : nil,
+      closed_at: closed_at,
+      closure_reason: closure_reason
     )
     lines.each do |id, qty|
       name, price = catalog.fetch(id)
@@ -182,6 +185,15 @@ if Rails.env.development?
   build_demo_order.call(placed_at: day_at.call(today, 14), status: :ready, table_number: 9, lines: [ [ 2, 1 ] ])
   build_demo_order.call(placed_at: day_at.call(today, 15), status: :served, table_number: 10, lines: [ [ 6, 3 ] ]) # 提供済み・未会計（会計待ち）
   build_demo_order.call(placed_at: day_at.call(today, 16), status: :ready, lines: [ [ 3, 1 ], [ 7, 1 ] ]) # テイクアウト・できあがり（Ready + Unpaid = 会計待ち。ADR-0009）
+
+  # 本日・打ち切り済み（ADR-0010）: kitchen 軸は凍結のまま payment 軸だけ Closed。
+  # 全作業キュー外に出てレジの「打ち切り済み」タブ（reopen 導線）と Admin 俯瞰でだけ見える。
+  build_demo_order.call(placed_at: day_at.call(today, 13), status: :ready,
+                        closed_at: day_at.call(today, 14), closure_reason: :no_show,
+                        lines: [ [ 1, 1 ], [ 6, 1 ] ]) # テイクアウト・来店なし（Ready で凍結）
+  build_demo_order.call(placed_at: day_at.call(today, 14), status: :pending, table_number: 11,
+                        closed_at: day_at.call(today, 14), closure_reason: :customer_request,
+                        lines: [ [ 4, 1 ] ]) # In-store・お客様都合（Pending で凍結）
 
   puts "デモ注文を #{Order.where('order_number LIKE ?', '#DEMO-%').count} 件シードしました（dev のみ）"
 end

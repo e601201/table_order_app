@@ -130,6 +130,9 @@ export type HistoryOrder = {
   id: number
   order_number: string
   status: KitchenOrderStatus
+  // 打ち切り済み（ADR-0010）。客向け表示は理由を問わず「キャンセル」バッジ1種のため
+  // boolean だけが届く（理由は送られない）。
+  closed: boolean
   placed_at: string
   total: number
   item_count: number
@@ -156,7 +159,11 @@ export type KitchenOrder = {
 
 export type OrdersByStatus = Record<KitchenOrderStatus, KitchenOrder[]>
 
-export type PaymentStatus = 'unpaid' | 'paid'
+// payment 軸（ADR-0010）: Unpaid → Paid | Closed の二股終端。closed は打ち切り済み。
+export type PaymentStatus = 'unpaid' | 'paid' | 'closed'
+
+// 打ち切り理由（ADR-0010）。4値固定: no_show=Takeout 限定 / walkout=In-store 限定。
+export type ClosureReason = 'no_show' | 'out_of_stock' | 'customer_request' | 'walkout'
 
 export type PaymentMethod = 'cash' | 'credit_card'
 
@@ -178,6 +185,8 @@ export type CashierOrder = {
   status: KitchenOrderStatus
   payment_status: PaymentStatus
   paid_at: string | null
+  closed_at: string | null
+  closure_reason: ClosureReason | null
   placed_at: string
   subtotal: number
   tax: number
@@ -194,6 +203,7 @@ export type AdminOrderRow = {
   order_type: OrderType
   status: KitchenOrderStatus
   payment_status: PaymentStatus
+  closure_reason: ClosureReason | null
   total: number
   placed_at: string
   item_count: number

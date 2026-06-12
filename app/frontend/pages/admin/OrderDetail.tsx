@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
-import { kitchenStatusMeta, paymentStatusMeta } from '@/lib/orderStatus'
+import { closureReasonLabel, kitchenStatusMeta, paymentStatusMeta } from '@/lib/orderStatus'
 import type { AdminOrderDetail } from '@/types'
 
 interface OrderDetailProps {
@@ -164,6 +164,10 @@ export default function OrderDetail({ order }: OrderDetailProps) {
               <MetaRow label="支払い方法">{paymentMethodLabel[order.payment_method] ?? order.payment_method}</MetaRow>
             )}
             {order.paid_at && <MetaRow label="会計時刻">{formatTime(order.paid_at)}</MetaRow>}
+            {/* 打ち切り理由（閲覧専用の表示のみ。ADR-0010） */}
+            {order.closure_reason && (
+              <MetaRow label="打ち切り理由">{closureReasonLabel[order.closure_reason]}</MetaRow>
+            )}
           </div>
         </div>
       </AdminLayout>
