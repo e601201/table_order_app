@@ -35,6 +35,9 @@ Rails.application.routes.draw do
   get  "cashier/payment/:id",          to: "cashier#payment_confirm",  as: :cashier_payment
   post "cashier/payment/:id",          to: "cashier#process_payment",  as: :cashier_process_payment
   get  "cashier/payment/:id/complete", to: "cashier#payment_complete", as: :cashier_payment_complete
+  # 打ち切り / 打ち切り解除（ADR-0010）。payment 軸の両終端を書くのはレジだけ。
+  post "cashier/orders/:id/close",  to: "cashier#close_order",  as: :cashier_order_close
+  post "cashier/orders/:id/reopen", to: "cashier#reopen_order", as: :cashier_order_reopen
 
   # 客（Takeout）の LINE ログイン（ADR-0008）。テイクアウト面は入口から全面ログイン必須。
   get  "order/line_login", to: "line_sessions#new", as: :line_login

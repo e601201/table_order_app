@@ -53,6 +53,16 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, inertia.props[:kpi][:orders][:value]
   end
 
+  test "打ち切られた注文も注文数に含む（placed 基準は需要を映す。ADR-0010）" do
+    login_as(:admin_staff)
+    create_order(paid: false)
+    closed = create_order(paid: false, status: :served)
+    closed.update!(closed_at: Time.zone.now, closure_reason: :walkout)
+
+    get admin_dashboard_path
+    assert_equal 2, inertia.props[:kpi][:orders][:value]
+  end
+
   test "平均注文単価は paid売上 ÷ paid注文数" do
     login_as(:admin_staff)
     create_order(paid: true, total: 2400)

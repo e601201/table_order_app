@@ -15,6 +15,8 @@ module Admin
         order_type: order.order_type,
         status: order.status,
         payment_status: order.payment_status,
+        # 打ち切り理由（ADR-0010）。Closed 以外は nil。閲覧専用の表示にだけ使う。
+        closure_reason: order.closure_reason,
         total: order.total,
         placed_at: order.placed_at.iso8601,
         item_count: order.order_items.sum(&:quantity),

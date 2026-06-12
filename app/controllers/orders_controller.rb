@@ -148,6 +148,9 @@ class OrdersController < ApplicationController
       id:           order.id,
       order_number: order.display_number,
       status:       order.status,
+      # 打ち切り済み（ADR-0010）。客向け表示は理由を問わず「キャンセル」バッジ1種のため
+      # closure_reason は送らない（walkout は In-store 限定で履歴に現れ得ない）。
+      closed:       order.closed?,
       placed_at:    order.placed_at.iso8601,
       total:        order.total,
       item_count:   order.order_items.sum(&:quantity),

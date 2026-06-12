@@ -4,6 +4,9 @@ class Order < ApplicationRecord
 
   enum :status, { pending: 0, in_progress: 1, ready: 2, served: 3 }, default: :pending
   enum :order_type, { in_store: 0, takeout: 1 }, default: :in_store
+  # 打ち切り理由（ADR-0010）。4値固定・other なし。それぞれ損失の種類が違う:
+  # no_show=廃棄 / out_of_stock=供給失敗 / customer_request=取り下げ / walkout=未収。
+  enum :closure_reason, { no_show: 0, out_of_stock: 1, customer_request: 2, walkout: 3 }
 
   validates :order_number, presence: true, uniqueness: true
   validates :subtotal, :tax, :total, :placed_at, presence: true
@@ -13,6 +16,15 @@ class Order < ApplicationRecord
   # In-store の所在は table_number。既存 takeout 行はリセット容認で一本化。
   validates :line_account, presence: true, if: :takeout?
   validates :line_account, absence: true, if: :in_store?
+  # payment 軸の終端は Paid | Closed の排他二択（ADR-0010）。Paid は打ち切れない（返金なし）。
+  validates :closed_at, absence: true, if: :paid?
+  # 理由コードは打ち切りと運命を共にする（同時必須・同時不在）。
+  validates :closure_reason, presence: true, if: :closed?
+  validates :closure_reason, absence: true, unless: :closed?
+  # 構造的にあり得ない組合せだけ弾く（ADR-0010）: no_show は Takeout 限定（着席客に
+  # 「来なかった」はない）、walkout は In-store 限定（新フローの Takeout に Served +
+  # Unpaid は存在しない）。kitchen 状態 × reason の整合は現場判断に委ね強制しない。
+  validate :closure_reason_matches_order_type
 
   scope :for_cashier_today, -> {
     today_orders = where(placed_at: Time.zone.today.all_day)
@@ -27,8 +39,21 @@ class Order < ApplicationRecord
   # 会計待ち = レジ作業キュー。In-store は提供済み（Served + Unpaid）、Takeout は
   # 手渡しが会計と同時に起きるため できあがり（Ready + Unpaid）が会計待ち（ADR-0009）。
   # 旧フローの Served + Unpaid な takeout はキューに出ない（リセット容認・救済分岐なし）。
+  # 打ち切り済み（Closed）は全作業キュー外（ADR-0010）。
   scope :awaiting_payment, -> {
-    in_store.served.where(paid_at: nil).or(takeout.ready.where(paid_at: nil))
+    in_store.served.where(paid_at: nil, closed_at: nil)
+            .or(takeout.ready.where(paid_at: nil, closed_at: nil))
+  }
+
+  # 当日の打ち切り済み（ADR-0010）。レジ盤面の打ち切り一覧 = 打ち切り解除（reopen）の
+  # 到達経路と、Admin の俯瞰が読む。
+  scope :closed_today, -> { placed_today.where.not(closed_at: nil).order(closed_at: :desc) }
+  # 当日の未決済（未会計・未打ち切り）のうち会計待ちキュー外（ADR-0010）。品切れ等で
+  # Pending / In progress のまま打ち切る対象に、レジが届くための導線。
+  scope :open_outside_cashier_queue, -> {
+    placed_today.where(paid_at: nil, closed_at: nil)
+                .where.not(id: awaiting_payment)
+                .order(placed_at: :desc)
   }
 
   # 日次リセットの連番を採番する（ADR-0007）。
@@ -57,7 +82,22 @@ class Order < ApplicationRecord
     paid_at.present?
   end
 
+  # 打ち切り済み（ADR-0010）: payment 軸の第2終端。paid? と同形の timestamp 判定。
+  def closed?
+    closed_at.present?
+  end
+
   def payment_status
-    paid? ? "paid" : "unpaid"
+    return "paid" if paid?
+    return "closed" if closed?
+
+    "unpaid"
+  end
+
+  private
+
+  def closure_reason_matches_order_type
+    errors.add(:closure_reason, :invalid) if no_show? && in_store?
+    errors.add(:closure_reason, :invalid) if walkout? && takeout?
   end
 end

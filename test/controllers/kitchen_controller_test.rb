@@ -122,6 +122,30 @@ class KitchenControllerTest < ActionDispatch::IntegrationTest
     assert_predicate order.reload, :served?
   end
 
+  # --- 打ち切り済み（Closed）は盤面から消える・遷移もできない（ADR-0010）---
+
+  test "打ち切られた注文は盤面のどのレーンにも出ない" do
+    login_as(:kitchen_staff)
+    order = create_order(status: :in_progress)
+    order.update!(closed_at: Time.zone.now, closure_reason: :customer_request)
+
+    get kitchen_path
+    all_ids = inertia.props[:ordersByStatus].values.flatten.map { |o| o[:id] }
+    assert_not_includes all_ids, order.id
+  end
+
+  test "打ち切られた注文は盤面から遷移できない" do
+    login_as(:kitchen_staff)
+    order = create_order(status: :in_progress)
+    order.update!(closed_at: Time.zone.now, closure_reason: :out_of_stock)
+
+    patch kitchen_order_path(order), params: { status: "ready" }
+
+    assert_redirected_to kitchen_path
+    assert_predicate order.reload, :in_progress? # 凍結されたまま
+    assert flash[:alert].present?
+  end
+
   test "サービスメッセージの送信失敗でもステータス遷移は成功する（ベストエフォート）" do
     login_as(:kitchen_staff)
     order = create_takeout_order(status: :in_progress, token: "token-1")

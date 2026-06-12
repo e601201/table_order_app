@@ -175,6 +175,20 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ new_order.id, old_order.id ], inertia.props[:orders].map { |o| o[:id] }
   end
 
+  test "履歴では打ち切られた注文に closed が立つ（表示はフロントの「キャンセル」バッジ）" do
+    taro = line_accounts(:taro)
+    closed_order = create_takeout_order(taro, number: "#H-5", status: :ready)
+    closed_order.update!(closed_at: Time.current, closure_reason: :no_show)
+    open_order = create_takeout_order(taro, number: "#H-6", status: :ready)
+
+    line_login_as(taro)
+    get "/order/history"
+
+    rows = inertia.props[:orders].index_by { |o| o[:id] }
+    assert rows[closed_order.id][:closed]
+    assert_not rows[open_order.id][:closed]
+  end
+
   test "履歴の各注文は kitchen progress の現在状態と明細・合計を持つ" do
     order = create_takeout_order(line_accounts(:taro), number: "#H-4", status: :ready)
     line_login_as(line_accounts(:taro))
