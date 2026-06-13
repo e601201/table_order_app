@@ -105,6 +105,132 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     assert_predicate order.reload, :served?
   end
 
+  # --- 打ち切り（Close）と打ち切り解除（Reopen）。payment 軸の第2終端（ADR-0010）。
+  # actor は Cashier のみ・Unpaid 限定・kitchen 軸は凍結 ---
+
+  test "未会計の注文を理由付きで打ち切れる（kitchen 軸は凍結）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+
+    post cashier_order_close_path(order), params: { closure_reason: "no_show" }
+    assert_redirected_to cashier_path
+
+    order.reload
+    assert_predicate order, :closed?
+    assert_equal "no_show", order.closure_reason
+    assert_predicate order, :ready?
+  end
+
+  test "会計済みの注文は打ち切れない（Paid と Closed は排他）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :served, paid: true)
+
+    post cashier_order_close_path(order), params: { closure_reason: "walkout" }
+    assert_redirected_to cashier_path
+
+    order.reload
+    assert_not order.closed?
+    assert_predicate order, :paid?
+  end
+
+  test "打ち切り済みの注文を再打ち切りしても理由は上書きされない" do
+    login_as(:cashier_staff)
+    order = create_order(status: :in_progress, paid: false)
+    order.update!(closed_at: Time.zone.now, closure_reason: :customer_request)
+
+    post cashier_order_close_path(order), params: { closure_reason: "out_of_stock" }
+    assert_redirected_to cashier_path
+
+    assert_equal "customer_request", order.reload.closure_reason
+  end
+
+  test "理由なし・不正な理由では打ち切れない" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+
+    post cashier_order_close_path(order), params: { closure_reason: "bogus" }
+    assert_redirected_to cashier_path
+
+    assert_not order.reload.closed?
+  end
+
+  test "打ち切り解除（reopen）で Unpaid に戻り会計待ちに再出現する" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+    order.update!(closed_at: Time.zone.now, closure_reason: :no_show)
+
+    post cashier_order_reopen_path(order)
+    assert_redirected_to cashier_path
+
+    order.reload
+    assert_not order.closed?
+    assert_nil order.closure_reason
+    assert_includes Order.awaiting_payment, order
+  end
+
+  test "打ち切り済みの注文は会計確認・会計処理ともに通らない" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+    order.update!(closed_at: Time.zone.now, closure_reason: :no_show)
+
+    get cashier_payment_path(order)
+    assert_redirected_to cashier_path
+
+    post cashier_payment_path(order), params: { payment_method: "cash" }
+    assert_redirected_to cashier_path
+    assert_not order.reload.paid?
+  end
+
+  test "打ち切り解除後は通常の会計で Served + Paid にできる（no-show 客が現れた）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+    order.update!(closed_at: Time.zone.now, closure_reason: :no_show)
+
+    post cashier_order_reopen_path(order)
+    post cashier_payment_path(order), params: { payment_method: "cash" }
+
+    order.reload
+    assert_predicate order, :served?
+    assert_predicate order, :paid?
+  end
+
+  test "打ち切り・打ち切り解除では LINE 通知を送らない（OrderClosed の購読者はゼロ）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :ready, paid: false, order_type: :takeout)
+
+    called = false
+    LineServiceMessenger.stub(:send_ready_message, ->(*_args) { called = true }) do
+      post cashier_order_close_path(order), params: { closure_reason: "no_show" }
+      post cashier_order_reopen_path(order)
+    end
+
+    assert_not called
+    assert_not order.reload.closed?
+  end
+
+  test "レジ盤面に当日の打ち切り一覧とキュー外の未払い注文が乗る" do
+    login_as(:cashier_staff)
+    queue_order = create_order(status: :served, paid: false)
+    pending_order = create_order(status: :pending, paid: false)
+    closed_order = create_order(status: :ready, paid: false, order_type: :takeout)
+    closed_order.update!(closed_at: Time.zone.now, closure_reason: :no_show)
+
+    get cashier_path
+    assert_response :success
+
+    queue_ids = inertia.props[:orders].map { |o| o[:id] }
+    outside_ids = inertia.props[:outsideQueueOrders].map { |o| o[:id] }
+    closed = inertia.props[:closedOrders]
+
+    assert_includes queue_ids, queue_order.id
+    assert_not_includes queue_ids, closed_order.id
+    assert_includes outside_ids, pending_order.id
+    assert_not_includes outside_ids, queue_order.id
+    assert_not_includes outside_ids, closed_order.id
+    assert_equal [ closed_order.id ], closed.map { |o| o[:id] }
+    assert_equal "no_show", closed.first[:closure_reason]
+  end
+
   private
 
   def login_as(fixture_name)

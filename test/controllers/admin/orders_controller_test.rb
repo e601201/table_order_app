@@ -48,6 +48,17 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes numbers, "#A-YESTERDAY"
   end
 
+  test "打ち切られた注文は一覧に残り payment_status=closed と理由が乗る（ADR-0010）" do
+    login_as(:admin_staff)
+    order = create_order(order_number: "#A-CLOSED", status: :served)
+    order.update!(closed_at: Time.zone.now, closure_reason: :walkout)
+
+    get admin_orders_path
+    row = inertia.props[:orders].find { |o| o[:order_number] == "#A-CLOSED" }
+    assert_equal "closed", row[:payment_status]
+    assert_equal "walkout", row[:closure_reason]
+  end
+
   test "一覧は受注時刻の降順" do
     login_as(:admin_staff)
     create_order(order_number: "#A-OLD", placed_at: 2.hours.ago)

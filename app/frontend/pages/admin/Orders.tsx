@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { ShoppingBag, ChefHat, Wallet, Clock, Search, Eye, RefreshCw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
-import { kitchenStatusMeta, kitchenStatusOrder, paymentStatusMeta } from '@/lib/orderStatus'
+import { closureReasonLabel, kitchenStatusMeta, kitchenStatusOrder, paymentStatusMeta } from '@/lib/orderStatus'
 import type { AdminOrderRow, AdminOrderStats, KitchenOrderStatus, PaymentStatus } from '@/types'
 
 interface OrdersProps {
@@ -23,6 +23,7 @@ const paymentTabs: { key: PaymentFilter; label: string }[] = [
   { key: 'all', label: 'すべて' },
   { key: 'unpaid', label: paymentStatusMeta.unpaid.label },
   { key: 'paid', label: paymentStatusMeta.paid.label },
+  { key: 'closed', label: paymentStatusMeta.closed.label },
 ]
 
 function formatTime(iso: string): string {
@@ -238,7 +239,12 @@ export default function Orders({ orders, stats }: OrdersProps) {
 
                   <div className="flex items-center gap-1.5" style={{ width: 200 }}>
                     <Badge label={k.label} color={k.color} bg={k.bg} />
-                    <Badge label={p.label} color={p.color} bg={p.bg} />
+                    {/* 打ち切りは理由付きバッジ（閲覧専用の表示のみ。ADR-0010） */}
+                    <Badge
+                      label={order.closure_reason ? `${p.label}・${closureReasonLabel[order.closure_reason]}` : p.label}
+                      color={p.color}
+                      bg={p.bg}
+                    />
                   </div>
 
                   <span style={{ width: 80, fontSize: 13, fontWeight: 500, color: adminColors.textSecondary }}>

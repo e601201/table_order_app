@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_090100) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_12_075255) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -80,6 +80,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_090100) do
   end
 
   create_table "orders", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.integer "closure_reason"
     t.datetime "created_at", null: false
     t.bigint "line_account_id"
     t.string "order_number", null: false
@@ -94,6 +96,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_090100) do
     t.integer "tax", null: false
     t.integer "total", null: false
     t.datetime "updated_at", null: false
+    t.index ["closed_at"], name: "index_orders_on_closed_at"
     t.index ["line_account_id"], name: "index_orders_on_line_account_id"
     t.index ["order_number"], name: "index_orders_on_order_number", unique: true
     t.index ["paid_at"], name: "index_orders_on_paid_at"

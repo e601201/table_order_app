@@ -3,8 +3,9 @@ class KitchenController < ApplicationController
   before_action -> { authorize_roles!(:kitchen, :admin) }
 
   def dashboard
+    # 打ち切り済み（Closed）は全作業キュー外 — 盤面にも出さない（ADR-0010）。
     orders = Order.includes(:order_items)
-                  .where(placed_at: Time.zone.now.all_day)
+                  .where(placed_at: Time.zone.now.all_day, closed_at: nil)
                   .order(placed_at: :desc)
     grouped = orders.group_by(&:status)
 
@@ -21,6 +22,10 @@ class KitchenController < ApplicationController
   def update_order_status
     order = Order.find(params[:id])
     new_status = params.require(:status)
+    # 打ち切り済みは kitchen 軸を凍結したまま動かさない（ADR-0010）。
+    if order.closed?
+      return redirect_to(kitchen_path, alert: "打ち切られた注文は進められません")
+    end
     # テイクアウトの Ready → Served はレジの会計経由のみ（ADR-0009: 手渡し＝会計）。
     # 盤面 UI もボタンを出さないが、境界はサーバー側で守る。
     if order.takeout? && new_status.to_s == "served"
