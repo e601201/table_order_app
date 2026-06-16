@@ -1,10 +1,23 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, router } from '@inertiajs/react'
+import { useState } from 'react'
 
 interface WelcomeProps {
   app_name: string
 }
 
 export default function Welcome({ app_name }: WelcomeProps) {
+  // デモ入口でテーブル番号を指定して In-store 注文に入る（イシュー #41）。
+  // Table エンティティ/母集合は持たないため、正の整数の自由入力。
+  const [tableNumber, setTableNumber] = useState('')
+  const parsed = Number(tableNumber)
+  const isValidTable = tableNumber.trim() !== '' && Number.isInteger(parsed) && parsed >= 1
+
+  const startInStoreOrder = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isValidTable) return
+    router.get('/order', { order_type: 'in_store', table_number: parsed })
+  }
+
   return (
     <>
       <Head title="ようこそ" />
@@ -21,15 +34,33 @@ export default function Welcome({ app_name }: WelcomeProps) {
             <h2 className="text-xs font-semibold tracking-wider text-gray-500 uppercase mb-3">
               お客様向け
             </h2>
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/order?order_type=in_store&table_number=5"
-                className="block w-full text-center px-4 py-3 rounded-lg bg-[#E53935] text-white font-medium shadow-sm hover:opacity-90 transition"
+            <form onSubmit={startInStoreOrder} className="flex flex-col gap-3">
+              <div>
+                <label htmlFor="table_number" className="block text-xs font-medium text-gray-600 mb-1">
+                  テーブル番号
+                </label>
+                <input
+                  id="table_number"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
+                  required
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                  placeholder="例: 5"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#E53935]/40 focus:border-[#E53935] transition"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!isValidTable}
+                className="block w-full text-center px-4 py-3 rounded-lg bg-[#E53935] text-white font-medium shadow-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                テーブルからの注文
-              </Link>
+                注文を開始
+              </button>
               {/* テイクアウトへの到達経路は LINE ミニアプリ（LIFF URL）のみ（ADR-0008） */}
-            </div>
+            </form>
           </section>
 
           <section>

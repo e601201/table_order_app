@@ -12,6 +12,9 @@ class Order < ApplicationRecord
   validates :subtotal, :tax, :total, :placed_at, presence: true
   validates :table_number, presence: true, if: :in_store?
   validates :table_number, absence: true, if: :takeout?
+  # table_number は所在を示す正の整数ラベル（CONTEXT.md: Table number / イシュー #41）。
+  # Table エンティティや母集合は持たないため上限は設けず、0・負の不正値だけを弾く。
+  validates :table_number, numericality: { only_integer: true, greater_than: 0 }, if: :in_store?
   # table_number と対をなす相互排他（ADR-0008）: Takeout の身元は LineAccount、
   # In-store の所在は table_number。既存 takeout 行はリセット容認で一本化。
   validates :line_account, presence: true, if: :takeout?

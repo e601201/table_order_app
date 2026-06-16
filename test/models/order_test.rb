@@ -164,6 +164,36 @@ class OrderTest < ActiveSupport::TestCase
     assert_predicate order, :valid?
   end
 
+  # --- table_number は正の整数ラベル（CONTEXT.md: Table number / イシュー #41）。
+  # 上限なし・0/負は不正 ---
+
+  test "in_store 注文は table_number が正の整数で有効" do
+    order = build_order(order_type: :in_store, table_number: 7)
+
+    assert_predicate order, :valid?
+  end
+
+  test "in_store 注文は table_number が無いと無効（presence）" do
+    order = build_order(order_type: :in_store, table_number: nil)
+
+    assert_not order.valid?
+    assert order.errors.added?(:table_number, :blank)
+  end
+
+  test "in_store 注文は table_number が 0 だと無効" do
+    order = build_order(order_type: :in_store, table_number: 0)
+
+    assert_not order.valid?
+    assert order.errors[:table_number].present?
+  end
+
+  test "in_store 注文は table_number が負だと無効" do
+    order = build_order(order_type: :in_store, table_number: -3)
+
+    assert_not order.valid?
+    assert order.errors[:table_number].present?
+  end
+
   # --- payment 軸の第2終端 Closed / 打ち切り（ADR-0010）。Unpaid → Paid | Closed。
   # kitchen 軸は凍結（触らない）、理由コード4値必須 ---
 

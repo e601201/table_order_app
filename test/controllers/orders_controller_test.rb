@@ -87,6 +87,41 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # --- テーブル番号の入口指定（デモ入口で必須。イシュー #41） ---
+
+  test "in_store は入口で渡した table_number で描画する" do
+    get "/order", params: { order_type: "in_store", table_number: 7 }
+
+    assert_response :success
+    assert_inertia_component "orders/Home"
+    assert_equal 7, inertia.props[:table_number]
+  end
+
+  test "in_store で table_number 未指定の /order は入口へ戻す" do
+    get "/order", params: { order_type: "in_store" }
+
+    assert_redirected_to root_path
+  end
+
+  test "in_store で不正な table_number（0）は入口へ戻し session を汚さない" do
+    get "/order", params: { order_type: "in_store", table_number: 0 }
+    assert_redirected_to root_path
+
+    # 0 は session に焼かれない → 続けて番号無しで来ても未確定のまま入口へ戻る
+    get "/order", params: { order_type: "in_store" }
+    assert_redirected_to root_path
+  end
+
+  test "in_store で table_number 未確定のまま checkout すると入口へ戻し注文を作らない" do
+    # 入口を経由せず table_number を確定させないままカートだけ積む
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+
+    assert_no_difference "Order.count" do
+      post "/order/checkout"
+    end
+    assert_redirected_to root_path
+  end
+
   # --- サービス通知トークンの発行（Checkout 時。ADR-0008） ---
 
   test "takeout の checkout はサービス通知トークンを発行して Order に保存する" do
