@@ -21,7 +21,9 @@ module TableOrderApp
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # 単一の日本店舗。「本日」境界（placed_today / 日次採番 / 各 KPI）は JST 暦日とする。
+    # DB 保存は既定どおり UTC（active_record.default_timezone = :utc）のまま。CONTEXT.md「本日 / 営業日」参照。
+    config.time_zone = "Tokyo"
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end
