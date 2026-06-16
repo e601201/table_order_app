@@ -1,6 +1,10 @@
 require "test_helper"
 
 class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
+  # 「本日」は JST 暦日（CONTEXT.md「本日 / 営業日」）。placed_at の相対オフセットが
+  # 壁時計次第で日付をまたがないよう、全テストを JST 正午に固定する（order_test.rb と同じ慣習）。
+  setup { travel_to Time.zone.local(2026, 6, 16, 12, 0, 0) }
+
   # --- 認可（ADR-0002 の役割境界。Admin のみアクセス可）---
 
   test "未ログインは login へリダイレクト" do
