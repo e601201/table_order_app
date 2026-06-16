@@ -8,6 +8,9 @@ require "test_helper"
 class CheckoutFlowTest < ActionDispatch::IntegrationTest
   setup do
     @item = menu_items(:classic_burger)
+    # In-store の入口でテーブル番号を確定させる（デモ入口で必須。イシュー #41）。
+    # takeout テストは後続の get で order_type を上書きし、table_number は nil 扱いになる。
+    get "/order", params: { order_type: "in_store", table_number: 5 }
   end
 
   test "checkout で Order と OrderItem がスナップショット付きで永続化され complete/:id へ遷移する" do

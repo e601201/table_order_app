@@ -78,6 +78,10 @@ _Avoid_: Purchase, ticket, transaction
 A property of `Order` that distinguishes how the food is handed over. Two values: `In-store` (customer eats at a table inside the restaurant; an `Order` must carry a `table_number` and is never tied to a `LineAccount`) and `Takeout` (customer orders through the LINE Mini App and picks up at the counter; `table_number` is absent and the `Order` must carry the placing `LineAccount`). `Order type` does not change the meaning of `Served` (in both cases it means "the customer has the food in hand") — but it does change **who raises it and when**: an `In-store` order is served at the table first and settled later (`Served → Paid`), while a `Takeout` order is handed over at the register, so the `Cashier`'s `Settlement` raises `Served` and `Paid` in the same act (`Ready → Served + Paid`; `Served + Unpaid` never exists for `Takeout`).
 _Avoid_: Dine-in / dine-out (acceptable as UI copy aliases only; canonical names remain `In-store` and `Takeout`)
 
+**Table number** (canonical Japanese: **テーブル番号**):
+In-store な `Order` の所在を示す正の整数ラベル。`Table` という独立エンティティも、「有効なテーブルの母集合（1..N）」も存在しない — `Order` に焼き込まれる自由なラベルにすぎない。`In-store` の `Order` は必ず持ち（正の整数）、`Takeout` は持たない（所在の代わりに `LineAccount`）。デモのウェルカム入口でオペレーターが任意に指定する自由ラベルであり、席・卓の在庫管理や着席ワークフローを表すものではない。
+_Avoid_: Table / テーブル（席や卓を表す独立モデルは存在しない）, seat, 卓番号 as an entity, テーブルの母集合 / 有効テーブル一覧（存在しない）
+
 ### Kitchen progress (axis 1)
 
 **Pending**:

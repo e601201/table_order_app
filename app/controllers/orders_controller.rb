@@ -12,6 +12,10 @@ class OrdersController < ApplicationController
   before_action :require_line_login!, if: -> { order_type == "takeout" || action_name == "history" }
 
   def home
+    # In-store はテーブル番号が確定していなければ入口へ戻す（デモ入口で必須。イシュー #41）。
+    # table_number は正の整数だけを session に焼くため、ここで nil なら未確定。
+    return redirect_to(root_path) if order_type == "in_store" && table_number.blank?
+
     # ウェルカム画面からの遷移は「新しい客のセッション開始」として Cart をクリアする
     clear_cart if params[:order_type].present?
 
@@ -74,6 +78,8 @@ class OrdersController < ApplicationController
   def checkout
     lines = cart_lines
     return redirect_to("/order/cart") if lines.empty?
+    # In-store はテーブル番号未確定なら入口へ（numericality 例外の手前で握る保険。イシュー #41）
+    return redirect_to(root_path) if order_type == "in_store" && table_number.blank?
 
     totals = cart_totals(lines)
     order = Order.transaction do
@@ -210,11 +216,15 @@ class OrdersController < ApplicationController
     session[:order_type] || "in_store"
   end
 
+  # In-store の所在を示す正の整数ラベル（CONTEXT.md: Table number / イシュー #41）。
+  # 正の整数のときだけ session に焼き、不正値（空・0・負）では session を汚さない。
+  # 未確定なら nil を返し、home / checkout のガードが入口へ退避させる。
   def table_number
     if params[:table_number].present?
-      session[:table_number] = params[:table_number].to_i
+      n = params[:table_number].to_i
+      session[:table_number] = n if n.positive?
     end
     return nil if order_type == "takeout"
-    session[:table_number] || 5
+    session[:table_number]
   end
 end
