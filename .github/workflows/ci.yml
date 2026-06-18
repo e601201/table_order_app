@@ -50,6 +50,25 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  js_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Run frontend unit tests (Vitest)
+        run: npm test
+
   test:
     runs-on: ubuntu-latest
 

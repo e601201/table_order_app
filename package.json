@@ -3,7 +3,8 @@
   "type": "module",
   "devDependencies": {
     "vite": "^8.0.16",
-    "vite-plugin-ruby": "^5.2.2"
+    "vite-plugin-ruby": "^5.2.2",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "@inertiajs/react": "^3.4.0",
@@ -21,6 +22,7 @@
     "typescript": "^6.0.3"
   },
   "scripts": {
-    "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json"
+    "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test": "vitest run"
   }
 }
