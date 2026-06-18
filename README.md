@@ -81,6 +81,7 @@ stateDiagram-v2
 | フロントエンド | React 19 + TypeScript + Inertia.js（サーバー駆動 SPA・REST API なし） |
 | スタイリング | Tailwind CSS 4（Vite プラグイン）・lucide-react |
 | ビルド | Vite 8 + vite-plugin-ruby |
+| テスト | Minitest（Rails）・Vitest（フロントの純粋ロジックの単体テスト） |
 | 認証 | `has_secure_password`（スタッフ）・LIFF ID トークン検証（テイクアウト客） |
 | 画像 | Active Storage（メニュー画像） |
 | 外部連携 | LINE ミニアプリ（LIFF）・LINE サービスメッセージ API |
@@ -129,13 +130,14 @@ LINE_READY_TEMPLATE_NAME=...   # できあがり通知のサービスメッセ�
 
 ```bash
 bin/dev                  # 開発サーバー一括起動（Rails + Vite + Tailwind ウォッチャー）
-bin/rails test           # テスト実行
+bin/rails test           # Rails テスト実行（Minitest）
 bin/rubocop              # Ruby リンター
 bin/brakeman             # セキュリティスキャン
 npm run check            # TypeScript 型チェック
+npm test                 # フロントのユニットテスト（Vitest）
 ```
 
-CI（GitHub Actions）が PR ごとに静的解析（brakeman / bundler-audit）・リント（rubocop）・テストを実行します。
+CI（GitHub Actions）が PR ごとに静的解析（brakeman / bundler-audit）・リント（rubocop）・テスト（Rails の Minitest とフロントの Vitest）を実行します。
 
 ## デプロイ
 

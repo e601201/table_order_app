@@ -12,6 +12,7 @@ Table ordering app (POC) for restaurants — mobile-first interface for tabletop
 - **Frontend**: React 19 + TypeScript + Inertia.js (server-driven SPA)
 - **Styling**: Tailwind CSS 4.3 via Vite plugin
 - **Build**: Vite 8.0 with vite-plugin-ruby
+- **Testing**: Minitest（Rails、`bin/rails test`）＋ Vitest（フロントの純粋ロジックを単体テスト、`app/frontend/**/*.test.ts`、`npm test`）
 - **Icons**: lucide-react
 - **Auth**: `has_secure_password`（Staffアカウント、bcrypt）
 - **Storage**: Active Storage（MenuItem画像、`:thumb` / `:detail` variant）
@@ -25,7 +26,8 @@ bin/rails server         # Railsのみ起動（ポート3000）
 bin/vite dev             # Viteのみ起動（ポート3036）
 bin/setup                # プロジェクト初期セットアップ
 npm run check            # TypeScript型チェック
-bin/rails test           # テスト実行
+npm test                 # フロントのユニットテスト（Vitest）
+bin/rails test           # Railsテスト実行（Minitest）
 bin/rubocop              # Rubyリンター
 bin/brakeman             # セキュリティスキャン
 ```

@@ -3,16 +3,14 @@ import { useMemo, useState } from 'react'
 import { ShoppingBag, ChefHat, Wallet, Clock, Search, Eye, RefreshCw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
+import { type KitchenFilter, type OrderTypeFilter, type PaymentFilter, filterOrders } from '@/lib/orderFilters'
 import { closureReasonLabel, kitchenStatusMeta, kitchenStatusOrder, paymentStatusMeta } from '@/lib/orderStatus'
-import type { AdminOrderRow, AdminOrderStats, KitchenOrderStatus, PaymentStatus } from '@/types'
+import type { AdminOrderRow, AdminOrderStats } from '@/types'
 
 interface OrdersProps {
   orders: AdminOrderRow[]
   stats: AdminOrderStats
 }
-
-type KitchenFilter = 'all' | KitchenOrderStatus
-type PaymentFilter = 'all' | PaymentStatus
 
 const kitchenTabs: { key: KitchenFilter; label: string }[] = [
   { key: 'all', label: 'すべて' },
@@ -24,6 +22,14 @@ const paymentTabs: { key: PaymentFilter; label: string }[] = [
   { key: 'unpaid', label: paymentStatusMeta.unpaid.label },
   { key: 'paid', label: paymentStatusMeta.paid.label },
   { key: 'closed', label: paymentStatusMeta.closed.label },
+]
+
+// 種別（order type）の絞り込みタブ（issue #43）。In-store は CONTEXT.md の
+// 「テーブル＝避ける」警告に触れないよう「店内」と表記する。
+const orderTypeTabs: { key: OrderTypeFilter; label: string }[] = [
+  { key: 'all', label: 'すべて' },
+  { key: 'in_store', label: '店内' },
+  { key: 'takeout', label: 'テイクアウト' },
 ]
 
 function formatTime(iso: string): string {
@@ -119,16 +125,12 @@ export default function Orders({ orders, stats }: OrdersProps) {
   const [query, setQuery] = useState('')
   const [kitchenFilter, setKitchenFilter] = useState<KitchenFilter>('all')
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all')
+  const [orderTypeFilter, setOrderTypeFilter] = useState<OrderTypeFilter>('all')
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return orders.filter((order) => {
-      const matchesKitchen = kitchenFilter === 'all' || order.status === kitchenFilter
-      const matchesPayment = paymentFilter === 'all' || order.payment_status === paymentFilter
-      const matchesQuery = q === '' || order.order_number.toLowerCase().includes(q)
-      return matchesKitchen && matchesPayment && matchesQuery
-    })
-  }, [orders, query, kitchenFilter, paymentFilter])
+  const visible = useMemo(
+    () => filterOrders(orders, { query, kitchen: kitchenFilter, payment: paymentFilter, orderType: orderTypeFilter }),
+    [orders, query, kitchenFilter, paymentFilter, orderTypeFilter],
+  )
 
   const columns = ['注文番号', '商品', '金額', '状態', '受注時刻', '操作']
 
@@ -165,7 +167,7 @@ export default function Orders({ orders, stats }: OrdersProps) {
           className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl"
           style={{ backgroundColor: adminColors.bg, border: `1px solid ${adminColors.border}` }}
         >
-          {/* ツールバー: 検索 + 調理タブ + 支払いフィルタ */}
+          {/* ツールバー: 検索 + 種別 + 調理 + 支払い（すべてクライアント側 AND 絞り込み） */}
           <div
             className="flex flex-wrap items-center gap-3 p-4"
             style={{ borderBottom: `1px solid ${adminColors.border}` }}
@@ -185,10 +187,20 @@ export default function Orders({ orders, stats }: OrdersProps) {
               />
             </div>
 
-            <FilterTabs tabs={kitchenTabs} active={kitchenFilter} onSelect={setKitchenFilter} />
+            {/* 種別（order type）: 検索の直後。店内 / テイクアウトで絞り込む（issue #43） */}
+            <div className="flex items-center gap-2">
+              <span style={filterLabel}>種別</span>
+              <FilterTabs tabs={orderTypeTabs} active={orderTypeFilter} onSelect={setOrderTypeFilter} />
+            </div>
+
+            {/* 調理（kitchen progress）: 種別と隣接するため見出しを付け群の境界を明確にする */}
+            <div className="flex items-center gap-2">
+              <span style={filterLabel}>調理</span>
+              <FilterTabs tabs={kitchenTabs} active={kitchenFilter} onSelect={setKitchenFilter} />
+            </div>
 
             <div className="ml-auto flex items-center gap-2">
-              <span style={{ fontSize: 12, fontWeight: 600, color: adminColors.textSecondary }}>支払い</span>
+              <span style={filterLabel}>支払い</span>
               <FilterTabs tabs={paymentTabs} active={paymentFilter} onSelect={setPaymentFilter} />
             </div>
           </div>
@@ -292,4 +304,11 @@ const hcell: React.CSSProperties = {
   fontWeight: 600,
   color: adminColors.textSecondary,
   letterSpacing: 0.4,
+}
+
+// 種別 / 調理 / 支払い の3フィルタ群の見出しを揃えるための共通スタイル。
+const filterLabel: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  color: adminColors.textSecondary,
 }
