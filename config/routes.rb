@@ -3,7 +3,6 @@ Rails.application.routes.draw do
   constraints(host: "127.0.0.1") do
     get "(*path)", to: redirect { |params, req| "#{req.protocol}localhost:#{req.port}/#{params[:path]}" }
   end
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
@@ -13,49 +12,53 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # スタッフ認証（ログイン/ログアウト）
+  # スタッフ認証（ログイン / ログアウト）
   get    "login",  to: "sessions#new",     as: :login
   post   "login",  to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
 
-  # 管理画面（Admin のみ）— ダッシュボード / Staff 管理 / Menu 管理（一覧・新規登録・編集・削除）
+  # Admin（要ログイン: admin）— ダッシュボード / Staff 管理 / Menu 管理 / 注文の閲覧専用俯瞰
   namespace :admin do
     get "dashboard", to: "dashboard#index" # 管理者コンソールの入口ハブ（導線のみ）
-    resources :staffs, only: %i[index new create edit update destroy]
-    resources :menu_items, only: %i[index new create edit update destroy]
-    resources :orders, only: %i[index show] # 閲覧専用の注文管理（ADR-0005）
+    resources :staffs,     except: %i[show] # 詳細ページは持たず一覧から直接 edit へ
+    resources :menu_items, except: %i[show] # 同上
+    resources :orders,     only:   %i[index show] # 閲覧専用の注文管理（ADR-0005）
   end
 
-  # for POC: Kitchen dashboard
-  get "kitchen", to: "kitchen#dashboard"
+  # キッチン（要ログイン: kitchen / admin）
+  get   "kitchen",            to: "kitchen#dashboard"
   patch "kitchen/orders/:id", to: "kitchen#update_order_status", as: :kitchen_order
 
-  # for POC: Cashier dashboard
-  get  "cashier",                      to: "cashier#dashboard"
-  get  "cashier/payment/:id",          to: "cashier#payment_confirm",  as: :cashier_payment
-  post "cashier/payment/:id",          to: "cashier#process_payment",  as: :cashier_process_payment
-  get  "cashier/payment/:id/complete", to: "cashier#payment_complete", as: :cashier_payment_complete
-  # 打ち切り / 打ち切り解除（ADR-0010）。payment 軸の両終端を書くのはレジだけ。
-  post "cashier/orders/:id/close",  to: "cashier#close_order",  as: :cashier_order_close
-  post "cashier/orders/:id/reopen", to: "cashier#reopen_order", as: :cashier_order_reopen
+  # レジ（要ログイン: cashier / admin）
+  get "cashier", to: "cashier#dashboard"
+  scope "cashier", as: :cashier do
+    get  "payment/:id",          to: "cashier#payment_confirm",  as: :payment
+    post "payment/:id",          to: "cashier#process_payment",  as: :process_payment
+    get  "payment/:id/complete", to: "cashier#payment_complete", as: :payment_complete
+    # 打ち切り / 打ち切り解除（ADR-0010）。payment 軸の両終端を書くのはレジだけ。
+    post "orders/:id/close",  to: "cashier#close_order",  as: :order_close
+    post "orders/:id/reopen", to: "cashier#reopen_order", as: :order_reopen
+  end
 
   # 客（Takeout）の LINE ログイン（ADR-0008）。テイクアウト面は入口から全面ログイン必須。
-  get  "order/line_login", to: "line_sessions#new", as: :line_login
-  post "order/line_login", to: "line_sessions#create"
+  get  "order/line_login", to: "line_sessions#new",    as: :line_login
+  post "order/line_login", to: "line_sessions#create", as: :order_line_login
 
-  # for POC: Order pages
+  # 客（未認証）の注文系ページ
   get "order", to: "orders#home"
-  get "order/item/:id", to: "orders#item_detail"
-  get "order/cart", to: "orders#cart_review"
-  post "order/cart", to: "orders#add_to_cart"
-  patch "order/cart/:line_id", to: "orders#update_cart_item"
-  delete "order/cart/:line_id", to: "orders#remove_cart_item"
-  post "order/checkout", to: "orders#checkout"
-  # 完了画面は永続 Order を :id で読む（ADR-0007）。bare パスは /order へ退避。
-  get "order/complete/:id", to: "orders#order_complete", as: :order_complete
-  get "order/complete", to: redirect("/order")
-  # 注文履歴（ADR-0008）。LINE ログイン必須・本人の注文だけを返す。
-  get "order/history", to: "orders#history", as: :order_history
+  scope "order", as: :order do
+    get    "item/:id",      to: "orders#item_detail"
+    get    "cart",          to: "orders#cart_review", as: :cart
+    post   "cart",          to: "orders#add_to_cart"
+    patch  "cart/:line_id", to: "orders#update_cart_item"
+    delete "cart/:line_id", to: "orders#remove_cart_item"
+    post   "checkout",      to: "orders#checkout", as: :checkout
+    # 完了画面は永続 Order を :id で読む（ADR-0007）。bare パスは /order へ退避。
+    get "complete/:id", to: "orders#order_complete", as: :complete
+    get "complete",     to: redirect("/order")
+    # 注文履歴（ADR-0008）。LINE ログイン必須・本人の注文だけを返す。
+    get "history", to: "orders#history", as: :history
+  end
 
   # Defines the root path route ("/")
   root "welcome#index"

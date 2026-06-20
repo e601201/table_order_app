@@ -48,9 +48,10 @@ Controller (render inertia: 'PageName', props: {...})
   - `kitchen_controller.rb` — キッチン向けダッシュボード（注文ステータス進行）
   - `cashier_controller.rb` — レジ向け画面（ダッシュボード、決済確認、決済完了）
   - `sessions_controller.rb` — スタッフのログイン／ログアウト
+  - `line_sessions_controller.rb` — 客（Takeout）のLINEログイン／ログアウト（ADR-0008）
   - `welcome_controller.rb` — ウェルカム（入口）ページ
   - `admin/` — Admin専用（`dashboard` / `staffs` / `menu_items` / `orders`）
-  - `concerns/` — `menu_catalog`（メニュー取得）、`cart_session`（セッションカート）、`staff_authentication`（ログイン必須・ロール認可）
+  - `concerns/` — `menu_catalog`（メニュー取得）、`cart_session`（セッションカート）、`staff_authentication`（ログイン必須・ロール認可）、`line_authentication`（LINEログイン必須 — ADR-0008）
 - `app/models/` — Active Recordモデル
   - `order.rb` / `order_item.rb` — 注文と明細（二軸状態: `status` enum ＋ `paid_at`）
   - `menu_item.rb` — DB化されたメニュー（Active Storage画像、jsonbの`sizes`/`addons`。ADR-0004）
@@ -72,7 +73,8 @@ GET    /                              → welcome#index            (ウェルカ
 GET/POST /login                       → sessions#new / #create   (スタッフログイン)
 DELETE /logout                        → sessions#destroy         (ログアウト)
 
-# 客（未認証）
+# 客（未認証。Takeout は入口から LINE ログイン必須 — ADR-0008）
+GET/POST /order/line_login            → line_sessions#new / #create  (LINEログイン)
 GET    /order                         → orders#home              (メニュー一覧)
 GET    /order/item/:id                → orders#item_detail       (商品詳細)
 GET    /order/cart                    → orders#cart_review       (カート確認)
@@ -80,7 +82,9 @@ POST   /order/cart                    → orders#add_to_cart
 PATCH  /order/cart/:line_id           → orders#update_cart_item
 DELETE /order/cart/:line_id           → orders#remove_cart_item
 POST   /order/checkout                → orders#checkout          (注文確定)
-GET    /order/complete                → orders#order_complete    (注文完了)
+GET    /order/complete/:id            → orders#order_complete    (注文完了。:id で永続Orderを読む — ADR-0007)
+GET    /order/complete                → redirect → /order        (bareパスは退避)
+GET    /order/history                 → orders#history           (注文履歴。LINEログイン必須・本人の注文のみ — ADR-0008)
 
 # キッチン（要ログイン: kitchen / admin）
 GET    /kitchen                       → kitchen#dashboard
@@ -91,6 +95,8 @@ GET    /cashier                       → cashier#dashboard
 GET    /cashier/payment/:id           → cashier#payment_confirm
 POST   /cashier/payment/:id           → cashier#process_payment
 GET    /cashier/payment/:id/complete  → cashier#payment_complete
+POST   /cashier/orders/:id/close      → cashier#close_order      (打ち切り — ADR-0010)
+POST   /cashier/orders/:id/reopen     → cashier#reopen_order     (打ち切り解除 — ADR-0010)
 
 # Admin（要ログイン: admin）
 GET    /admin/dashboard               → admin/dashboard#index
