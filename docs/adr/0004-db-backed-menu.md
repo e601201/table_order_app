@@ -9,7 +9,7 @@ status: accepted
 ## Considered Options
 
 - **sizes / addons を正規化テーブルにする** — 却下。POC では item 内に閉じた値オブジェクトで十分で、現行の定数構造（item にネストした配列）とも一致し移行が最小。共有 size/addon エンティティや category テーブル化は将来スコープ。
-- **論理削除 / availability（売り切れ）ライフサイクル** — 却下。`order_items` が `name` / `unit_price` / `size_label` / `addons` を全てスナップショット済みのため、`MenuItem` を物理削除しても注文履歴は壊れない。これは ADR-0003（Staff 物理削除）と対称の論理。「今日だけ売り切れ」を毎回再入力せず扱いたいなら別 ADR に委ねる。
+- **論理削除 / availability（売り切れ）ライフサイクル** — 却下。`order_items` が `name` / `unit_price` / `size_label` / `addons` を全てスナップショット済みのため、`MenuItem` を物理削除しても注文履歴は壊れない。これは ADR-0003（Staff 物理削除）と対称の論理。「今日だけ売り切れ」を毎回再入力せず扱いたいなら別 ADR に委ねる（→ ADR-0011 で在庫・売り切れ・補充として解決）。
 - **`order_items.menu_item_id` を FK 化する** — 却下。FK にすると物理削除がブロックされるか on_delete nullify が必要になる。履歴表示は `menu_item_id` を参照せずスナップショットだけで描画するため、plain integer の「由来メモ」で足りる。
 - **`category` を Rails enum（integer）にする** — 却下。`Order` の `status` / `order_type` は enum だが、category は状態機械ではなく、顧客画面が文字列 slug（`"burgers"` 等）でフィルタしている。string + inclusion が素直で frontend も無変更。
 - **画像を URL 文字列のまま持つ** — 却下。実店舗ではファイルアップロードが自然で、Kamal 側に永続ボリューム（`table_order_app_storage:/rails/storage`）が既にあり追加インフラがほぼ不要なため ActiveStorage を採用。
