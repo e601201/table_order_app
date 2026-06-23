@@ -164,6 +164,33 @@ class Admin::MenuItemsControllerTest < ActionDispatch::IntegrationTest
     assert_not item.reload.suspended?
   end
 
+  test "一覧の各メニューは stock と suspended を持つ（在庫操作 UI 用）" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    item.update!(stock: 8, suspended: true)
+    get admin_menu_items_path
+    row = inertia.props[:menu_items].find { |i| i[:id] == item.id }
+    assert_equal 8, row[:stock]
+    assert_equal true, row[:suspended]
+  end
+
+  test "編集フォームからも stock と suspended を更新できる" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    patch admin_menu_item_path(item), params: valid_params(stock: 15, suspended: true)
+    item.reload
+    assert_equal 15, item.stock
+    assert item.suspended?
+  end
+
+  test "編集フォームで stock を空にすると無制限(nil)になる" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    item.update!(stock: 9)
+    patch admin_menu_item_path(item), params: valid_params(stock: "")
+    assert_nil item.reload.stock
+  end
+
   private
 
   def login_as(fixture_name)

@@ -84,7 +84,7 @@ module Admin
     def menu_item_params
       permitted = params.permit(
         :category, :name, :description, :base_price, :calories,
-        :recommended, :max_quantity, :image,
+        :recommended, :max_quantity, :image, :stock, :suspended,
         sizes: %i[id label extra],
         addons: %i[id label extra]
       )
@@ -110,7 +110,11 @@ module Admin
         sizes: item.sizes,
         addons: item.addons,
         image_url: item.image_url(:thumb),
-        has_image: item.image.attached?
+        has_image: item.image.attached?,
+        # 在庫操作 UI 用（Admin には実数を見せる。ADR-0011）。
+        stock: item.stock,
+        suspended: item.suspended,
+        sold_out: item.sold_out?
       }
     end
   end
