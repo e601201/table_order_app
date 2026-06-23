@@ -37,6 +37,9 @@ export default function CartReview({ table_number, order_type, liff_id, cart_ite
   }
 
   const placeOrder = async () => {
+    // 確定を押した時点でモーダルは閉じる。在庫不足で同じカートへ差し戻されても
+    // モーダルが残らず、差し戻しの flash トーストが隠れない（ADR-0011）。
+    setShowConfirmModal(false)
     // takeout は OrderReady のサービスメッセージ送信用に LIFF アクセストークンを同送する
     // （ADR-0008）。取得できなくても注文は止めない — 通知なしで続行する。
     const liffAccessToken = order_type === 'takeout' && liff_id ? await getLiffAccessToken(liff_id) : null
