@@ -106,6 +106,7 @@ class OrdersController < ApplicationController
           line_total:   line[:line_total]
         )
       end
+      decrement_tracked_stock!(lines)
       new_order
     end
 
@@ -137,6 +138,22 @@ class OrdersController < ApplicationController
   end
 
   private
+
+  # 在庫減算は Checkout の瞬間だけ（カートは予約しない。ADR-0011）。
+  # 追跡品（stock 非 nil）を注文数量分だけ減らす。無制限（nil）は対象外。
+  def decrement_tracked_stock!(lines)
+    quantity_by_item(lines).each do |item_id, qty|
+      item = MenuItem.find_by(id: item_id)
+      next if item.nil? || item.stock.nil?
+
+      MenuItem.where(id: item_id).update_all([ "stock = stock - ?", qty ])
+    end
+  end
+
+  # 同一 MenuItem の複数 Line を数量合算する（size / addon 違いも在庫は item 単位。ADR-0011）。
+  def quantity_by_item(lines)
+    lines.group_by { |l| l[:item_id] }.transform_values { |ls| ls.sum { |l| l[:quantity] } }
+  end
 
   # サービス通知トークンは Checkout（ユーザー操作）時にしか発行できない（ADR-0008）。
   # 発行失敗は注文を止めない — OrderReady の通知なしで続行し、ログだけ残す。

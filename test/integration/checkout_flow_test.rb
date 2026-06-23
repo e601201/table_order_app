@@ -34,6 +34,24 @@ class CheckoutFlowTest < ActionDispatch::IntegrationTest
     assert_equal 1460, item.line_total
   end
 
+  # --- 在庫減算（ADR-0011）: 減算は Checkout の瞬間だけ。カートは予約しない。 ---
+
+  test "checkout で追跡品の在庫が注文数量分だけ減る" do
+    @item.update!(stock: 10)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 3 }
+    post "/order/checkout"
+
+    assert_equal 7, @item.reload.stock
+  end
+
+  test "checkout で無制限(nil)在庫は減算されない" do
+    @item.update!(stock: nil)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
+    post "/order/checkout"
+
+    assert_nil @item.reload.stock
+  end
+
   test "takeout のカートを checkout すると LineAccount に紐づき table_number が nil の Order が作られる" do
     # takeout は LINE ログイン必須（ADR-0008）。LIFF 導線と同じく order_type をセッションに焼く
     line_login_as(line_accounts(:taro))
