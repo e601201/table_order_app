@@ -24,6 +24,8 @@ class MenuItem < ApplicationRecord
   validates :base_price, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :calories, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :max_quantity, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  # stock: nil = 在庫無制限（追跡しない）。present のとき 0 以上の整数（ADR-0011）。
+  validates :stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :normalize_options
 

@@ -21,7 +21,10 @@ Rails.application.routes.draw do
   namespace :admin do
     get "dashboard", to: "dashboard#index" # 管理者コンソールの入口ハブ（導線のみ）
     resources :staffs,     except: %i[show] # 詳細ページは持たず一覧から直接 edit へ
-    resources :menu_items, except: %i[show] # 同上
+    resources :menu_items, except: %i[show] do # 同上
+      # サービス中の素早い在庫操作（補充＝絶対値 / 売切トグル）。重い編集フォームを再送しない（ADR-0011）。
+      member { patch :availability }
+    end
     resources :orders,     only:   %i[index show] # 閲覧専用の注文管理（ADR-0005）
   end
 

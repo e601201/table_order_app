@@ -116,6 +116,54 @@ class Admin::MenuItemsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 
+  # --- 在庫操作（ADR-0011）: 補充＝絶対値セット / 売切トグル / Admin 専有 ---
+
+  test "admin は在庫を補充（絶対値セット）できる" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    patch availability_admin_menu_item_path(item), params: { stock: 20 }
+    assert_redirected_to admin_menu_items_path
+    assert_equal 20, item.reload.stock
+  end
+
+  test "admin は販売停止を切り替えられる" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    patch availability_admin_menu_item_path(item), params: { suspended: true }
+    assert item.reload.suspended?
+  end
+
+  test "admin は在庫を空にして無制限(nil)に戻せる" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    item.update!(stock: 5)
+    patch availability_admin_menu_item_path(item), params: { stock: "" }
+    assert_nil item.reload.stock
+  end
+
+  test "負の在庫は拒否され在庫は変わらない" do
+    login_as(:admin_staff)
+    item = menu_items(:classic_burger)
+    item.update!(stock: 5)
+    patch availability_admin_menu_item_path(item), params: { stock: -1 }
+    assert_equal 5, item.reload.stock
+  end
+
+  test "非 admin は在庫操作できない" do
+    login_as(:kitchen_staff)
+    item = menu_items(:classic_burger)
+    patch availability_admin_menu_item_path(item), params: { suspended: true }
+    assert_redirected_to kitchen_path
+    assert_not item.reload.suspended?
+  end
+
+  test "未ログインの在庫操作は login へリダイレクト" do
+    item = menu_items(:classic_burger)
+    patch availability_admin_menu_item_path(item), params: { suspended: true }
+    assert_redirected_to login_path
+    assert_not item.reload.suspended?
+  end
+
   private
 
   def login_as(fixture_name)

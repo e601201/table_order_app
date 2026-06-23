@@ -64,6 +64,13 @@ class MenuItemTest < ActiveSupport::TestCase
     assert_not MenuItem.new(valid_attrs(stock: nil, suspended: true)).sellable?, "無制限でも停止 → 不可"
   end
 
+  test "stock は present のとき 0 以上の整数（nil は無制限で許容）" do
+    assert MenuItem.new(valid_attrs(stock: nil)).valid?, "nil は許容"
+    assert MenuItem.new(valid_attrs(stock: 0)).valid?
+    assert MenuItem.new(valid_attrs(stock: 5)).valid?
+    assert_not MenuItem.new(valid_attrs(stock: -1)).valid?, "負数は不可"
+  end
+
   test "as_customer_json は sellable を含み、残数(stock)を漏らさない" do
     sold = MenuItem.new(valid_attrs(stock: 0)).as_customer_json(image_variant: :thumb)
     assert_equal false, sold[:sellable]

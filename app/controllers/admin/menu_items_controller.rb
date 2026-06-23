@@ -54,7 +54,28 @@ module Admin
       redirect_to admin_menu_items_path, notice: "メニュー「#{item.name}」を削除しました"
     end
 
+    # サービス中の素早い在庫操作（ADR-0011）。重い編集フォームを再送せず、
+    # 補充（stock の絶対値セット。空 = 無制限 nil）と販売停止トグルだけを更新する。
+    # 在庫操作は Admin 専有（クラスの authorize_roles!(:admin) で担保）。
+    def availability
+      item = MenuItem.find(params[:id])
+
+      if item.update(availability_params)
+        redirect_to admin_menu_items_path, notice: "「#{item.name}」の在庫を更新しました"
+      else
+        redirect_to admin_menu_items_path, inertia: { errors: item.errors }
+      end
+    end
+
     private
+
+    # 送られたキーだけ更新する。stock は絶対値セット、空文字は無制限（nil）。
+    def availability_params
+      attrs = {}
+      attrs[:stock] = params[:stock].blank? ? nil : params[:stock] if params.key?(:stock)
+      attrs[:suspended] = ActiveModel::Type::Boolean.new.cast(params[:suspended]) if params.key?(:suspended)
+      attrs
+    end
 
     def remove_image_requested?
       ActiveModel::Type::Boolean.new.cast(params[:remove_image])
