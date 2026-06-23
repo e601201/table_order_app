@@ -52,6 +52,32 @@ class CheckoutFlowTest < ActionDispatch::IntegrationTest
     assert_nil @item.reload.stock
   end
 
+  test "在庫不足の checkout は注文全体をロールバックしカートへ差し戻す（残数は不変）" do
+    @item.update!(stock: 1)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 3 }
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert_equal 1, @item.reload.stock, "減算されず残数は不変"
+    assert flash[:alert].present?, "売り切れ・在庫不足を利用者に伝える"
+  end
+
+  test "売り越し防止: カート投入後に在庫が尽きたら checkout が最終ゲートで弾く（非予約）" do
+    @item.update!(stock: 1)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+
+    # カートは非予約。別の客が先に確定して在庫が尽きた状況を再現する。
+    @item.update!(stock: 0)
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert_equal 0, @item.reload.stock
+  end
+
   test "takeout のカートを checkout すると LineAccount に紐づき table_number が nil の Order が作られる" do
     # takeout は LINE ログイン必須（ADR-0008）。LIFF 導線と同じく order_type をセッションに焼く
     line_login_as(line_accounts(:taro))

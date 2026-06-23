@@ -106,13 +106,17 @@ class OrdersController < ApplicationController
           line_total:   line[:line_total]
         )
       end
-      decrement_tracked_stock!(lines)
+      reserve_tracked_stock!(lines)
       new_order
     end
 
     attach_service_notification_token(order)
     clear_cart
     redirect_to "/order/complete/#{order.id}"
+  rescue InsufficientStock => e
+    # 1 行でも在庫不足なら注文全体をロールバックし、カートへ差し戻す（ADR-0011）。
+    # 残数はこの差し戻しメッセージで初めて利用者に提示する（一覧では二値のみ）。
+    redirect_to "/order/cart", alert: stock_shortfall_message(e.shortfalls)
   end
 
   # 完了画面は永続 Order を :id で読むだけ（副作用なし）。再表示可能。
@@ -139,15 +143,37 @@ class OrdersController < ApplicationController
 
   private
 
+  # 在庫不足を全ロールバックさせる checkout 内シグナル（ADR-0011）。不足明細を運ぶ。
+  class InsufficientStock < StandardError
+    attr_reader :shortfalls
+
+    def initialize(shortfalls)
+      @shortfalls = shortfalls
+      super("在庫不足")
+    end
+  end
+
   # 在庫減算は Checkout の瞬間だけ（カートは予約しない。ADR-0011）。
-  # 追跡品（stock 非 nil）を注文数量分だけ減らす。無制限（nil）は対象外。
-  def decrement_tracked_stock!(lines)
+  # 追跡品（stock 非 nil）を `stock >= 数量` の条件付きで原子的に減算し、売り越しを防ぐ。
+  # 1 行でも不足したら不足明細を添えて raise し、トランザクション全体をロールバックさせる。
+  # 無制限（nil）は減算対象外。
+  def reserve_tracked_stock!(lines)
+    shortfalls = []
     quantity_by_item(lines).each do |item_id, qty|
       item = MenuItem.find_by(id: item_id)
       next if item.nil? || item.stock.nil?
 
-      MenuItem.where(id: item_id).update_all([ "stock = stock - ?", qty ])
+      updated = MenuItem.where(id: item_id).where("stock >= ?", qty).update_all([ "stock = stock - ?", qty ])
+      shortfalls << { name: item.name, remaining: item.stock } if updated.zero?
     end
+    raise InsufficientStock, shortfalls if shortfalls.any?
+  end
+
+  # 差し戻しメッセージ。残数 0 は「売り切れ」、残あれば「残り N 個まで」（ADR-0011）。
+  def stock_shortfall_message(shortfalls)
+    shortfalls.map do |s|
+      s[:remaining].to_i.zero? ? "#{s[:name]}は売り切れました" : "#{s[:name]}は残り#{s[:remaining]}個までです"
+    end.join(" / ")
   end
 
   # 同一 MenuItem の複数 Line を数量合算する（size / addon 違いも在庫は item 単位。ADR-0011）。
