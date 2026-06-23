@@ -55,6 +55,11 @@ class MenuItem < ApplicationRecord
     }
   end
 
+  # 売り切れは stock からの派生（独立フラグではない）。nil（無制限）は売り切れにならない（ADR-0011）。
+  def sold_out?
+    stock == 0
+  end
+
   private
 
   # フォーム送信（文字列値・symbol/string キー混在）と jsonb 読み出しを正規化する。

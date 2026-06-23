@@ -48,6 +48,13 @@ class MenuItemTest < ActiveSupport::TestCase
     assert MenuItem.new(valid_attrs(max_quantity: 1)).valid?
   end
 
+  # 在庫（ADR-0011）: 売り切れは stock からの派生で、独立フラグではない。
+  test "sold_out? は stock が 0 のときだけ true（nil は無制限で false）" do
+    assert MenuItem.new(valid_attrs(stock: 0)).sold_out?, "stock=0 は売り切れ"
+    assert_not MenuItem.new(valid_attrs(stock: 5)).sold_out?, "stock>0 は売り切れでない"
+    assert_not MenuItem.new(valid_attrs(stock: nil)).sold_out?, "stock=nil（無制限）は売り切れでない"
+  end
+
   test "sizes は最低1要素が必要" do
     item = MenuItem.new(valid_attrs(sizes: []))
     assert_not item.valid?
