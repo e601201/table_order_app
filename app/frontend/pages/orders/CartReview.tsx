@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, Check } from 'lucide-react'
 import { getLiffAccessToken } from '@/lib/liff'
+import FlashMessage from '@/components/FlashMessage'
 import type { CartLine, CartTotals, OrderType } from '@/types'
 
 interface CartReviewProps {
@@ -15,6 +16,10 @@ interface CartReviewProps {
 export default function CartReview({ table_number, order_type, liff_id, cart_items, totals }: CartReviewProps) {
   const [specialInstructions, setSpecialInstructions] = useState('')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
+
+  // カート内に売り切れ・販売停止の line があれば確定前に止める（ADR-0011）。
+  // 確定しても checkout が弾くが、ここで先に気づかせる（drop はしない）。
+  const hasUnsellable = cart_items.some((line) => !line.sellable)
 
   const updateQuantity = (line: CartLine, delta: number) => {
     const next = line.quantity + delta
@@ -32,6 +37,9 @@ export default function CartReview({ table_number, order_type, liff_id, cart_ite
   }
 
   const placeOrder = async () => {
+    // 確定を押した時点でモーダルは閉じる。在庫不足で同じカートへ差し戻されても
+    // モーダルが残らず、差し戻しの flash トーストが隠れない（ADR-0011）。
+    setShowConfirmModal(false)
     // takeout は OrderReady のサービスメッセージ送信用に LIFF アクセストークンを同送する
     // （ADR-0008）。取得できなくても注文は止めない — 通知なしで続行する。
     const liffAccessToken = order_type === 'takeout' && liff_id ? await getLiffAccessToken(liff_id) : null
@@ -41,6 +49,8 @@ export default function CartReview({ table_number, order_type, liff_id, cart_ite
   return (
     <>
       <Head title="カート" />
+      {/* checkout 在庫不足の差し戻しメッセージ（「残り◯個まで」）を表示する（ADR-0011） */}
+      <FlashMessage />
       <div
         className="relative mx-auto max-w-[390px] min-h-screen bg-[#FFF8F0] flex flex-col"
         style={{ fontFamily: 'Outfit, sans-serif' }}
@@ -83,15 +93,18 @@ export default function CartReview({ table_number, order_type, liff_id, cart_ite
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="w-[72px] h-[72px] rounded-xl object-cover shrink-0"
+                  className={`w-[72px] h-[72px] rounded-xl object-cover shrink-0 ${!item.sellable ? 'opacity-40 grayscale' : ''}`}
                 />
 
                 {/* Item Info */}
                 <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                   {/* Name Row */}
                   <div className="flex items-center justify-between">
-                    <span className="text-[15px] font-semibold text-[#1A1210] truncate">
+                    <span className="flex items-center gap-1.5 text-[15px] font-semibold text-[#1A1210] truncate">
                       {item.name}
+                      {!item.sellable && (
+                        <span className="shrink-0 px-2 py-0.5 rounded-full bg-[#FFEBEE] text-[11px] font-bold text-[#E53935]">売り切れ</span>
+                      )}
                     </span>
                     <button
                       onClick={() => removeItem(item)}
@@ -202,8 +215,13 @@ export default function CartReview({ table_number, order_type, liff_id, cart_ite
               <span className="text-xs font-semibold text-[#6D5D4B]">{totals.item_count} 点</span>
             </div>
           </div>
+          {hasUnsellable && (
+            <p className="text-xs font-semibold text-[#E53935] text-center">
+              売り切れの商品があります。削除してから確定してください。
+            </p>
+          )}
           <button
-            disabled={cart_items.length === 0}
+            disabled={cart_items.length === 0 || hasUnsellable}
             onClick={() => setShowConfirmModal(true)}
             className="flex items-center justify-center gap-2.5 h-[52px] rounded-2xl bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.38),0_2px_4px_rgba(229,57,53,0.19)] hover:bg-[#C62828] disabled:opacity-50 disabled:hover:bg-[#E53935] transition-colors"
           >

@@ -102,11 +102,16 @@ export default function OrderHome({
                 {recommendedItems.map((item) => (
                   <Link key={item.id} href={`/order/item/${item.id}`} className="shrink-0 w-[155px] md:w-[220px] rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
                     <div className="relative h-[120px] md:h-[140px] rounded-t-xl overflow-hidden">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <img src={item.image} alt={item.name} className={`w-full h-full object-cover ${!item.sellable ? 'opacity-40 grayscale' : ''}`} />
                       <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFB300]">
                         <Star className="w-3 h-3 text-[#1A1210]" />
                         <span className="text-[10px] font-semibold text-[#1A1210]">おすすめ</span>
                       </div>
+                      {!item.sellable && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/30">
+                          <span className="px-3 py-1 rounded-full bg-[#1A1210]/80 text-xs font-bold text-white">売り切れ</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1.5 md:gap-2 p-2.5 px-3 md:p-3 md:px-3.5">
                       <span className="text-sm md:text-[15px] font-semibold text-[#1A1210] truncate">{item.name}</span>
@@ -132,8 +137,13 @@ export default function OrderHome({
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {categoryItems.map((item) => (
                   <Link key={item.id} href={`/order/item/${item.id}`} className="rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
-                    <div className="h-[120px] md:h-[160px] rounded-t-xl overflow-hidden">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <div className="relative h-[120px] md:h-[160px] rounded-t-xl overflow-hidden">
+                      <img src={item.image} alt={item.name} className={`w-full h-full object-cover ${!item.sellable ? 'opacity-40 grayscale' : ''}`} />
+                      {!item.sellable && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/30">
+                          <span className="px-3 py-1 rounded-full bg-[#1A1210]/80 text-xs font-bold text-white">売り切れ</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col gap-1.5 md:gap-2 p-2.5 px-3 md:p-3 md:px-3.5">
                       <span className="text-sm md:text-[15px] font-semibold text-[#1A1210] truncate">{item.name}</span>

@@ -25,7 +25,8 @@ export default function ItemDetail({ item }: ItemDetailProps) {
   }
 
   const handleAddToCart = () => {
-    if (submitting) return
+    // 売り切れ・販売停止はカートに入れない（サーバ側 add_to_cart でも再判定。ADR-0011）。
+    if (submitting || !item.sellable) return
     setSubmitting(true)
     router.post(
       '/order/cart',
@@ -233,11 +234,11 @@ export default function ItemDetail({ item }: ItemDetailProps) {
           </div>
           <button
             onClick={handleAddToCart}
-            disabled={submitting}
-            className="flex items-center justify-center gap-2.5 md:gap-3 h-[52px] md:h-[56px] md:px-10 md:min-w-[280px] rounded-2xl bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.38),0_2px_4px_rgba(229,57,53,0.19)] hover:bg-[#C62828] disabled:opacity-60 transition-colors"
+            disabled={submitting || !item.sellable}
+            className="flex items-center justify-center gap-2.5 md:gap-3 h-[52px] md:h-[56px] md:px-10 md:min-w-[280px] rounded-2xl bg-[#E53935] shadow-[0_4px_16px_rgba(229,57,53,0.38),0_2px_4px_rgba(229,57,53,0.19)] hover:bg-[#C62828] disabled:opacity-60 disabled:hover:bg-[#E53935] transition-colors"
           >
             <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            <span className="text-base md:text-lg font-bold text-white">カートに追加</span>
+            <span className="text-base md:text-lg font-bold text-white">{item.sellable ? 'カートに追加' : '売り切れ'}</span>
           </button>
         </div>
       </div>

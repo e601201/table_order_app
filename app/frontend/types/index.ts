@@ -46,6 +46,8 @@ export type MenuItem = {
   max_quantity: number
   sizes: SizeOption[]
   addons: AddonOption[]
+  // 販売可否の二値（売り切れ・販売停止を畳んだ結果）。残数は渡さない（ADR-0011）。
+  sellable: boolean
 }
 
 // Admin のメニュー管理画面が扱う MenuItem（顧客向け MenuItem に image_url / has_image を加えた形）。
@@ -62,6 +64,10 @@ export type AdminMenuItem = {
   addons: AddonOption[]
   image_url: string
   has_image: boolean
+  // 在庫操作 UI 用。Admin には実数を見せる（ADR-0011）。stock=null は在庫無制限。
+  stock: number | null
+  suspended: boolean
+  sold_out: boolean
 }
 
 export type CartLine = {
@@ -77,6 +83,8 @@ export type CartLine = {
   line_total: number
   image: string
   max_quantity: number
+  // 売り切れ・販売停止になった line を確定前に警告するための二値（ADR-0011）。
+  sellable: boolean
 }
 
 export type CartTotals = {

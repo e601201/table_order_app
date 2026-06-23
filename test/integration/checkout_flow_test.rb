@@ -34,6 +34,75 @@ class CheckoutFlowTest < ActionDispatch::IntegrationTest
     assert_equal 1460, item.line_total
   end
 
+  # --- 在庫減算（ADR-0011）: 減算は Checkout の瞬間だけ。カートは予約しない。 ---
+
+  test "checkout で追跡品の在庫が注文数量分だけ減る" do
+    @item.update!(stock: 10)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 3 }
+    post "/order/checkout"
+
+    assert_equal 7, @item.reload.stock
+  end
+
+  test "checkout で無制限(nil)在庫は減算されない" do
+    @item.update!(stock: nil)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
+    post "/order/checkout"
+
+    assert_nil @item.reload.stock
+  end
+
+  test "在庫不足の checkout は注文全体をロールバックしカートへ差し戻す（残数は不変）" do
+    @item.update!(stock: 1)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 3 }
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert_equal 1, @item.reload.stock, "減算されず残数は不変"
+    assert flash[:alert].present?, "売り切れ・在庫不足を利用者に伝える"
+  end
+
+  test "販売停止商品はカート投入後でも checkout で弾かれる（在庫があっても）" do
+    @item.update!(stock: 10)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    @item.update!(suspended: true) # 投入後に Admin が販売停止にする
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert flash[:alert].present?
+    assert_equal 10, @item.reload.stock, "販売停止時は在庫も減らさない"
+  end
+
+  test "販売停止の無制限(stock=nil)商品もカート投入後の checkout で弾かれる" do
+    @item.update!(stock: nil)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    @item.update!(suspended: true)
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert flash[:alert].present?
+  end
+
+  test "売り越し防止: カート投入後に在庫が尽きたら checkout が最終ゲートで弾く（非予約）" do
+    @item.update!(stock: 1)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+
+    # カートは非予約。別の客が先に確定して在庫が尽きた状況を再現する。
+    @item.update!(stock: 0)
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert_equal 0, @item.reload.stock
+  end
+
   test "takeout のカートを checkout すると LineAccount に紐づき table_number が nil の Order が作られる" do
     # takeout は LINE ログイン必須（ADR-0008）。LIFF 導線と同じく order_type をセッションに焼く
     line_login_as(line_accounts(:taro))

@@ -106,12 +106,17 @@ class OrdersController < ApplicationController
           line_total:   line[:line_total]
         )
       end
+      reserve_stock!(lines)
       new_order
     end
 
     attach_service_notification_token(order)
     clear_cart
     redirect_to "/order/complete/#{order.id}"
+  rescue InsufficientStock => e
+    # 1 行でも在庫不足なら注文全体をロールバックし、カートへ差し戻す（ADR-0011）。
+    # 残数はこの差し戻しメッセージで初めて利用者に提示する（一覧では二値のみ）。
+    redirect_to "/order/cart", alert: stock_shortfall_message(e.shortfalls)
   end
 
   # 完了画面は永続 Order を :id で読むだけ（副作用なし）。再表示可能。
@@ -137,6 +142,52 @@ class OrdersController < ApplicationController
   end
 
   private
+
+  # 在庫不足を全ロールバックさせる checkout 内シグナル（ADR-0011）。不足明細を運ぶ。
+  class InsufficientStock < StandardError
+    attr_reader :shortfalls
+
+    def initialize(shortfalls)
+      @shortfalls = shortfalls
+      super("在庫不足")
+    end
+  end
+
+  # Checkout の権威ある最終ゲート（ADR-0011）。カートは非予約なので、投入後に
+  # 販売停止になった / 在庫が尽きた商品をここで弾く。減算は Checkout の瞬間だけ。
+  # - 販売停止（suspended）は在庫に関係なく不可。顧客には「売り切れ」として伝える。
+  # - 追跡品（stock 非 nil）は `stock >= 数量` の条件付きで原子的に減算し、売り越しを防ぐ。
+  # - 無制限（nil）は減算対象外。
+  # 1 行でも不可なら不足明細を添えて raise し、トランザクション全体をロールバックさせる。
+  def reserve_stock!(lines)
+    shortfalls = []
+    quantity_by_item(lines).each do |item_id, qty|
+      item = MenuItem.find_by(id: item_id)
+      next if item.nil?
+
+      if item.suspended?
+        shortfalls << { name: item.name, remaining: 0 } # 顧客表示は「売り切れ」に畳む
+        next
+      end
+      next if item.stock.nil?
+
+      updated = MenuItem.where(id: item_id).where("stock >= ?", qty).update_all([ "stock = stock - ?", qty ])
+      shortfalls << { name: item.name, remaining: item.stock } if updated.zero?
+    end
+    raise InsufficientStock, shortfalls if shortfalls.any?
+  end
+
+  # 差し戻しメッセージ。残数 0 は「売り切れ」、残あれば「残り N 個まで」（ADR-0011）。
+  def stock_shortfall_message(shortfalls)
+    shortfalls.map do |s|
+      s[:remaining].to_i.zero? ? "#{s[:name]}は売り切れました" : "#{s[:name]}は残り#{s[:remaining]}個までです"
+    end.join(" / ")
+  end
+
+  # 同一 MenuItem の複数 Line を数量合算する（size / addon 違いも在庫は item 単位。ADR-0011）。
+  def quantity_by_item(lines)
+    lines.group_by { |l| l[:item_id] }.transform_values { |ls| ls.sum { |l| l[:quantity] } }
+  end
 
   # サービス通知トークンは Checkout（ユーザー操作）時にしか発行できない（ADR-0008）。
   # 発行失敗は注文を止めない — OrderReady の通知なしで続行し、ログだけ残す。

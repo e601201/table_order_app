@@ -24,6 +24,8 @@ class MenuItem < ApplicationRecord
   validates :base_price, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :calories, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :max_quantity, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  # stock: nil = 在庫無制限（追跡しない）。present のとき 0 以上の整数（ADR-0011）。
+  validates :stock, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
 
   before_validation :normalize_options
 
@@ -51,8 +53,20 @@ class MenuItem < ApplicationRecord
       recommended: recommended,
       max_quantity: max_quantity,
       sizes: sizes,
-      addons: addons
+      addons: addons,
+      # 顧客には販売可否の二値だけ渡す。残数（stock）は漏らさない（ADR-0011）。
+      sellable: sellable?
     }
+  end
+
+  # 売り切れは stock からの派生（独立フラグではない）。nil（無制限）は売り切れにならない（ADR-0011）。
+  def sold_out?
+    stock == 0
+  end
+
+  # 販売可否 = 手動停止でない かつ 売り切れでない（ADR-0011）。
+  def sellable?
+    !suspended? && !sold_out?
   end
 
   private

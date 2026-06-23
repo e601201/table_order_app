@@ -57,4 +57,25 @@ class CartMenuRejoinTest < ActionDispatch::IntegrationTest
     @item.destroy
     assert_empty cart_items
   end
+
+  # ADR-0011: 売り切れ・販売停止は item も構成も生きているので drop せず、
+  # sellable:false で確定前に警告する（物理削除や構成消滅の silent drop とは扱いが違う）。
+  test "カート投入後に売り切れた line は drop されず sellable:false で警告される" do
+    add_line(size_id: "regular")
+    @item.update!(stock: 0)
+    line = cart_items.first
+    assert_equal @item.id, line[:item_id], "drop されない"
+    assert_equal false, line[:sellable]
+  end
+
+  test "販売停止になった line も drop されず sellable:false" do
+    add_line(size_id: "regular")
+    @item.update!(suspended: true)
+    assert_equal false, cart_items.first[:sellable]
+  end
+
+  test "販売可能な line は sellable:true" do
+    add_line(size_id: "regular")
+    assert_equal true, cart_items.first[:sellable]
+  end
 end

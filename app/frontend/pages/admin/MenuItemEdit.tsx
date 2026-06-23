@@ -28,6 +28,8 @@ export default function MenuItemEdit({ menu_item, categories }: MenuItemEditProp
             calories: menu_item.calories,
             max_quantity: menu_item.max_quantity,
             recommended: menu_item.recommended,
+            stock: menu_item.stock,
+            suspended: menu_item.suspended,
             sizes: menu_item.sizes,
             addons: menu_item.addons,
           }}

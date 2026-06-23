@@ -41,7 +41,9 @@ module CartSession
         quantity: quantity,
         line_total: unit_price * quantity,
         image: item.image_url(:thumb),
-        max_quantity: item.max_quantity
+        max_quantity: item.max_quantity,
+        # 売り切れ・販売停止は drop せず確定前に警告する（ADR-0011）。
+        sellable: item.sellable?
       }
     end
   end
@@ -59,7 +61,9 @@ module CartSession
   end
 
   def add_to_cart!(item_id:, size_id:, addon_ids:, quantity:)
-    return if find_menu_item(item_id).nil?
+    item = find_menu_item(item_id)
+    # 販売不可（売り切れ / 販売停止）はカートに入れない（ADR-0011）。確定時にも再判定する。
+    return if item.nil? || !item.sellable?
 
     cart = current_cart
     normalized_addons = Array(addon_ids).reject(&:blank?).uniq.sort

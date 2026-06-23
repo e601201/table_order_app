@@ -31,7 +31,7 @@ The role that ends the payment axis — and the only role that writes either of 
 _Avoid_: Register, checkout, 会計係, 会計スタッフ, 会計 (the **role** name is "レジ"; "会計" is reserved for the act of settling — see the Flagged ambiguities)
 
 **Admin** (canonical Japanese: **管理者**):
-A `Staff` role for system administration rather than `Order` operation. Unlike `Kitchen` and `Cashier`, it advances neither order axis. Conceptually an `Admin` may manage `Staff` accounts, manage the `Menu`, and reach every staff surface. Today an `Admin` can manage `Staff` accounts, log in, and manage the `Menu` (create / edit / delete `MenuItem`s, including images) via `/admin/menu_items` (ADR-0004), and read-only-monitor the day's `Order`s via `/admin/orders` — viewing both state axes and totals without advancing either (ADR-0005). The order screen is a single-restaurant daily oversight view: there is no Store/Shop concept and no cancellation state (ADR-0005). An `Admin`'s home is a statistics dashboard at `/admin/dashboard` showing the day's KPIs (sales / order count / 平均注文単価, each with a day-over-day change), a 7-day sales trend, the day's top-5 popular `MenuItem`s by sold quantity, and a read-only preview of recent `Order`s that links to `/admin/orders`; navigation is delegated to the admin sidebar and the staff-surface switcher, not link cards. An admin-only switcher in each staff surface's header lets it move between `Kitchen`, `Cashier`, and the admin console (ADR-0005 update).
+A `Staff` role for system administration rather than `Order` operation. Unlike `Kitchen` and `Cashier`, it advances neither order axis. Conceptually an `Admin` may manage `Staff` accounts, manage the `Menu`, and reach every staff surface. Today an `Admin` can manage `Staff` accounts, log in, and manage the `Menu` (create / edit / delete `MenuItem`s, including images) via `/admin/menu_items` (ADR-0004) — including each `MenuItem`'s availability (`Stock`, `Suspended`, and the derived `Sold out`; `Restock`), which **only** an `Admin` may change — and read-only-monitor the day's `Order`s via `/admin/orders` — viewing both state axes and totals without advancing either (ADR-0005). The order screen is a single-restaurant daily oversight view: there is no Store/Shop concept and no cancellation state (ADR-0005). An `Admin`'s home is a statistics dashboard at `/admin/dashboard` showing the day's KPIs (sales / order count / 平均注文単価, each with a day-over-day change), a 7-day sales trend, the day's top-5 popular `MenuItem`s by sold quantity, and a read-only preview of recent `Order`s that links to `/admin/orders`; navigation is delegated to the admin sidebar and the staff-surface switcher, not link cards. An admin-only switcher in each staff surface's header lets it move between `Kitchen`, `Cashier`, and the admin console (ADR-0005 update).
 _Avoid_: Superuser, root, owner, オーナー, 店長
 
 ### Menu
@@ -55,6 +55,26 @@ _Avoid_: Variant, portion
 **Addon**:
 An optional extra applied to a configured `Line` (e.g. チーズ追加, パティ追加). Multiple `Addon`s may be selected per `Line`; each contributes its `extra` to the price.
 _Avoid_: Topping, modifier, option (acceptable in UI copy; canonical is "Addon")
+
+### Inventory
+
+A `MenuItem` becomes unsellable through two independent gates: it runs **out of supply** (`Stock` reaches 0) or an `Admin` **stops selling it** (`Suspended`). Both block new sales; the customer sees a single 売り切れ badge for either. Inventory is a property of the `MenuItem` template only — it never appears on a `Line` or `Order` (those snapshot name / price / size / addons at `Checkout` and are unaffected by later stock changes).
+
+**Stock** (canonical Japanese: **在庫**):
+A `MenuItem`'s remaining sellable quantity, held as a **nullable** integer. `nil` means **untracked** — the item is effectively unlimited and never reaches `Sold out` from supply (e.g. ドリンク); a non-negative integer means **tracked** (e.g. 本日20食限定). Decremented at `Checkout` by the ordered quantity — never reserved while in a `Cart` (a `Cart` has no consequence until `Checkout`). Distinct from `max_quantity`, which caps how many of one `Line` a single `Order` may contain, not how many remain to sell.
+_Avoid_: Quantity (collides with a `Line`'s quantity), 在庫数 as a field separate from 在庫, a standalone inventory entity (it is a column on `MenuItem`)
+
+**Sold out** (canonical Japanese: **売り切れ**):
+A **derived** state of a *tracked* `MenuItem`, true exactly when `Stock == 0`. Not a stored flag — it is computed from `Stock`. An *untracked* item (`Stock == nil`) is never `Sold out`. A `Sold out` `MenuItem` cannot be added to a `Cart` and is rejected at `Checkout`. Lifted only by `Restock`.
+_Avoid_: 在庫切れ as a stored flag (it is derived from `Stock`); `out_of_stock` (that is a `Closed` closure reason — a per-`Order` settling outcome raised when an *already-placed* order cannot be fulfilled; `Sold out` is the *preventive* `MenuItem` state that stops new orders — the two are complementary, not the same concept); unavailable (the broader sellability concept that also covers `Suspended`)
+
+**Suspended** (canonical Japanese: **販売停止**):
+A manual boolean an `Admin` sets on a `MenuItem` to stop new sales regardless of `Stock`. Independent of `Sold out`: an item with stock remaining can be `Suspended`, and `Restock` does not lift it (only the `Admin` does). A `MenuItem` is sellable iff it is **not** `Suspended` **and** not `Sold out` (`Stock` is `nil` or `> 0`).
+_Avoid_: Sold out / 売り切れ (that is the supply-driven, derived state — `Suspended` is manual and stock-independent), 取扱停止 / 一時停止 (acceptable casual aliases; canonical is 販売停止), hidden / 非表示 (a `Suspended` item is still shown to the customer, marked unsellable — it is not removed from the `Menu`), delete (physical deletion is a separate, permanent `Admin` act — ADR-0003-style hard delete)
+
+**Restock** (canonical Japanese: **補充**):
+The `Admin` act of raising a *tracked* `MenuItem`'s `Stock` back above 0, which clears the derived `Sold out` state. Operates on the supply gate only — it does not touch `Suspended`.
+_Avoid_: 入荷 (acceptable casual alias), refill, replenish as a separate event (there is no `Restock` domain event — it is a plain `Admin` edit of `Stock`)
 
 ### Order
 

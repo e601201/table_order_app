@@ -26,6 +26,8 @@ export default function MenuItemNew({ categories }: MenuItemNewProps) {
             calories: 0,
             max_quantity: 1,
             recommended: false,
+            stock: null,
+            suspended: false,
             sizes: [{ id: '', label: 'レギュラー', extra: 0 }],
             addons: [],
           }}

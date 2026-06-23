@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useMemo, useState } from 'react'
-import { Utensils, Search, Pencil, Trash2, Plus, Star } from 'lucide-react'
+import { Utensils, Search, Pencil, Trash2, Plus, Minus, Star } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
 import { categoryLabel, categoryEmoji } from '@/lib/menuCategory'
 import type { AdminMenuItem } from '@/types'
@@ -39,6 +39,16 @@ export default function MenuItems({ menu_items, categories }: MenuItemsProps) {
   function destroy(item: AdminMenuItem) {
     if (!window.confirm(`メニュー「${item.name}」を削除しますか？この操作は取り消せません。`)) return
     router.delete(`/admin/menu_items/${item.id}`, { preserveScroll: true })
+  }
+
+  // 在庫操作（ADR-0011）。重い編集フォームを再送せず availability エンドポイントへ即時反映。
+  // 補充は絶対値セット。stock=null（無制限）の品はステッパーを出さない。
+  function setStock(item: AdminMenuItem, next: number) {
+    router.patch(`/admin/menu_items/${item.id}/availability`, { stock: next }, { preserveScroll: true })
+  }
+
+  function toggleSuspended(item: AdminMenuItem) {
+    router.patch(`/admin/menu_items/${item.id}/availability`, { suspended: !item.suspended }, { preserveScroll: true })
   }
 
   return (
@@ -150,6 +160,9 @@ export default function MenuItems({ menu_items, categories }: MenuItemsProps) {
             <span style={{ width: 90, fontSize: 12, fontWeight: 600, color: adminColors.textSecondary, letterSpacing: 0.4, textAlign: 'right' }}>
               価格
             </span>
+            <span style={{ width: 200, fontSize: 12, fontWeight: 600, color: adminColors.textSecondary, letterSpacing: 0.4 }}>
+              在庫 / 販売
+            </span>
             <span style={{ width: 80, fontSize: 12, fontWeight: 600, color: adminColors.textSecondary, letterSpacing: 0.4, textAlign: 'right' }}>
               操作
             </span>
@@ -174,6 +187,11 @@ export default function MenuItems({ menu_items, categories }: MenuItemsProps) {
                     <p className="flex items-center gap-1.5 truncate" style={{ fontSize: 14, fontWeight: 600, color: adminColors.textPrimary }}>
                       {item.name}
                       {item.recommended && <Star size={13} color="#FB8C00" fill="#FB8C00" />}
+                      {item.suspended ? (
+                        <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 700 }}>販売停止</span>
+                      ) : item.sold_out ? (
+                        <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: '#fef2f2', color: '#dc2626', fontSize: 11, fontWeight: 700 }}>売り切れ</span>
+                      ) : null}
                     </p>
                     <p className="truncate" style={{ fontSize: 12, color: adminColors.textSecondary }}>
                       {item.calories} kcal ・ サイズ {item.sizes.length} 種
@@ -192,6 +210,45 @@ export default function MenuItems({ menu_items, categories }: MenuItemsProps) {
 
                 <div style={{ width: 90, textAlign: 'right', fontSize: 14, fontWeight: 700, color: adminColors.textPrimary }}>
                   ¥{item.base_price}
+                </div>
+
+                {/* 在庫 / 販売 のクイック操作（ADR-0011） */}
+                <div className="flex items-center gap-2" style={{ width: 200 }}>
+                  {item.stock === null ? (
+                    <span style={{ fontSize: 12, color: adminColors.textSecondary }}>無制限</span>
+                  ) : (
+                    <div className="flex items-center rounded-md" style={{ border: `1px solid ${adminColors.border}` }}>
+                      <button
+                        type="button"
+                        onClick={() => setStock(item, Math.max(0, (item.stock ?? 0) - 1))}
+                        disabled={(item.stock ?? 0) <= 0}
+                        title="在庫を1減らす"
+                        className="flex h-7 w-7 items-center justify-center disabled:opacity-40"
+                      >
+                        <Minus size={13} color={adminColors.textPrimary} />
+                      </button>
+                      <span className="flex h-7 min-w-9 items-center justify-center px-1" style={{ fontSize: 13, fontWeight: 700, color: item.sold_out ? '#dc2626' : adminColors.textPrimary, borderLeft: `1px solid ${adminColors.border}`, borderRight: `1px solid ${adminColors.border}` }}>
+                        {item.stock}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setStock(item, (item.stock ?? 0) + 1)}
+                        title="在庫を1補充する"
+                        className="flex h-7 w-7 items-center justify-center"
+                      >
+                        <Plus size={13} color={adminColors.textPrimary} />
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => toggleSuspended(item)}
+                    title={item.suspended ? '販売を再開する' : '販売を停止する'}
+                    className="rounded-md px-2 py-1"
+                    style={{ border: `1px solid ${adminColors.border}`, fontSize: 11, fontWeight: 600, color: item.suspended ? '#16a34a' : '#dc2626' }}
+                  >
+                    {item.suspended ? '再開' : '停止'}
+                  </button>
                 </div>
 
                 <div className="flex items-center justify-end gap-1.5" style={{ width: 80 }}>

@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react'
+import { router, usePage } from '@inertiajs/react'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import type { SharedProps } from '@/types'
@@ -9,6 +9,11 @@ export default function FlashMessage() {
   const message = flash?.alert ?? flash?.notice ?? null
   const isError = Boolean(flash?.alert)
   const [visible, setVisible] = useState(false)
+  // 同じ文言が連続しても（例: 在庫不足で同じカートへ繰り返し差し戻されたとき）毎回
+  // トーストを出し直すためのカウンタ。Inertia の遷移完了ごとに進める。
+  const [navTick, setNavTick] = useState(0)
+
+  useEffect(() => router.on('finish', () => setNavTick((t) => t + 1)), [])
 
   useEffect(() => {
     if (!message) {
@@ -18,7 +23,7 @@ export default function FlashMessage() {
     setVisible(true)
     const timer = setTimeout(() => setVisible(false), 4000)
     return () => clearTimeout(timer)
-  }, [message])
+  }, [message, navTick])
 
   if (!visible || !message) return null
 

@@ -20,6 +20,9 @@ export type MenuItemFormValues = {
   calories: number
   max_quantity: number
   recommended: boolean
+  // 在庫（ADR-0011）。null = 在庫無制限（追跡しない）。suspended = 手動販売停止。
+  stock: number | null
+  suspended: boolean
   sizes: SizeOption[]
   addons: AddonOption[]
 }
@@ -273,6 +276,19 @@ export default function MenuItemForm({
                 style={inputStyle}
               />
             </Field>
+            {/* 在庫（ADR-0011）。空欄 = 在庫無制限（追跡しない）。0 で売り切れ。 */}
+            <Field label="在庫数（空欄=無制限）" htmlFor="stock" error={errors.stock}>
+              <input
+                id="stock"
+                type="number"
+                min={0}
+                value={data.stock ?? ''}
+                onChange={(e) => setData('stock', e.target.value === '' ? null : Number(e.target.value))}
+                placeholder="無制限"
+                className={inputClass}
+                style={inputStyle}
+              />
+            </Field>
           </div>
 
           <label className="flex items-center gap-2" style={{ fontSize: 14, color: adminColors.textPrimary }}>
@@ -282,6 +298,16 @@ export default function MenuItemForm({
               onChange={(e) => setData('recommended', e.target.checked)}
             />
             おすすめとして表示する
+          </label>
+
+          {/* 在庫が残っていても売らない手動ゲート（在庫とは独立。ADR-0011）。 */}
+          <label className="flex items-center gap-2" style={{ fontSize: 14, color: adminColors.textPrimary }}>
+            <input
+              type="checkbox"
+              checked={data.suspended}
+              onChange={(e) => setData('suspended', e.target.checked)}
+            />
+            販売停止にする（在庫が残っていても売らない）
           </label>
         </div>
 

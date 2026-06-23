@@ -48,6 +48,38 @@ class MenuItemTest < ActiveSupport::TestCase
     assert MenuItem.new(valid_attrs(max_quantity: 1)).valid?
   end
 
+  # 在庫（ADR-0011）: 売り切れは stock からの派生で、独立フラグではない。
+  test "sold_out? は stock が 0 のときだけ true（nil は無制限で false）" do
+    assert MenuItem.new(valid_attrs(stock: 0)).sold_out?, "stock=0 は売り切れ"
+    assert_not MenuItem.new(valid_attrs(stock: 5)).sold_out?, "stock>0 は売り切れでない"
+    assert_not MenuItem.new(valid_attrs(stock: nil)).sold_out?, "stock=nil（無制限）は売り切れでない"
+  end
+
+  # 販売可否は suspended（手動停止）と stock（売り切れ）の AND（ADR-0011）。
+  test "sellable? は suspended と stock の AND で決まる" do
+    assert MenuItem.new(valid_attrs(stock: 3, suspended: false)).sellable?, "在庫あり・未停止 → 可"
+    assert MenuItem.new(valid_attrs(stock: nil, suspended: false)).sellable?, "無制限・未停止 → 可"
+    assert_not MenuItem.new(valid_attrs(stock: 0, suspended: false)).sellable?, "売り切れ → 不可"
+    assert_not MenuItem.new(valid_attrs(stock: 3, suspended: true)).sellable?, "在庫あっても停止 → 不可"
+    assert_not MenuItem.new(valid_attrs(stock: nil, suspended: true)).sellable?, "無制限でも停止 → 不可"
+  end
+
+  test "stock は present のとき 0 以上の整数（nil は無制限で許容）" do
+    assert MenuItem.new(valid_attrs(stock: nil)).valid?, "nil は許容"
+    assert MenuItem.new(valid_attrs(stock: 0)).valid?
+    assert MenuItem.new(valid_attrs(stock: 5)).valid?
+    assert_not MenuItem.new(valid_attrs(stock: -1)).valid?, "負数は不可"
+  end
+
+  test "as_customer_json は sellable を含み、残数(stock)を漏らさない" do
+    sold = MenuItem.new(valid_attrs(stock: 0)).as_customer_json(image_variant: :thumb)
+    assert_equal false, sold[:sellable]
+    assert_not sold.key?(:stock), "残数は顧客に漏らさない"
+
+    available = MenuItem.new(valid_attrs(stock: 5)).as_customer_json(image_variant: :thumb)
+    assert_equal true, available[:sellable]
+  end
+
   test "sizes は最低1要素が必要" do
     item = MenuItem.new(valid_attrs(sizes: []))
     assert_not item.valid?
