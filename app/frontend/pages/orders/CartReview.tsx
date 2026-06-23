@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, Check } from 'lucide-react'
 import { getLiffAccessToken } from '@/lib/liff'
+import FlashMessage from '@/components/FlashMessage'
 import type { CartLine, CartTotals, OrderType } from '@/types'
 
 interface CartReviewProps {
@@ -45,6 +46,8 @@ export default function CartReview({ table_number, order_type, liff_id, cart_ite
   return (
     <>
       <Head title="カート" />
+      {/* checkout 在庫不足の差し戻しメッセージ（「残り◯個まで」）を表示する（ADR-0011） */}
+      <FlashMessage />
       <div
         className="relative mx-auto max-w-[390px] min-h-screen bg-[#FFF8F0] flex flex-col"
         style={{ fontFamily: 'Outfit, sans-serif' }}
