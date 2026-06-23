@@ -64,6 +64,31 @@ class CheckoutFlowTest < ActionDispatch::IntegrationTest
     assert flash[:alert].present?, "売り切れ・在庫不足を利用者に伝える"
   end
 
+  test "販売停止商品はカート投入後でも checkout で弾かれる（在庫があっても）" do
+    @item.update!(stock: 10)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    @item.update!(suspended: true) # 投入後に Admin が販売停止にする
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert flash[:alert].present?
+    assert_equal 10, @item.reload.stock, "販売停止時は在庫も減らさない"
+  end
+
+  test "販売停止の無制限(stock=nil)商品もカート投入後の checkout で弾かれる" do
+    @item.update!(stock: nil)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    @item.update!(suspended: true)
+
+    assert_no_difference -> { Order.count } do
+      post "/order/checkout"
+    end
+    assert_redirected_to "/order/cart"
+    assert flash[:alert].present?
+  end
+
   test "売り越し防止: カート投入後に在庫が尽きたら checkout が最終ゲートで弾く（非予約）" do
     @item.update!(stock: 1)
     post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }

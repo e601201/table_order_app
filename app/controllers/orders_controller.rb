@@ -106,7 +106,7 @@ class OrdersController < ApplicationController
           line_total:   line[:line_total]
         )
       end
-      reserve_tracked_stock!(lines)
+      reserve_stock!(lines)
       new_order
     end
 
@@ -153,15 +153,23 @@ class OrdersController < ApplicationController
     end
   end
 
-  # 在庫減算は Checkout の瞬間だけ（カートは予約しない。ADR-0011）。
-  # 追跡品（stock 非 nil）を `stock >= 数量` の条件付きで原子的に減算し、売り越しを防ぐ。
-  # 1 行でも不足したら不足明細を添えて raise し、トランザクション全体をロールバックさせる。
-  # 無制限（nil）は減算対象外。
-  def reserve_tracked_stock!(lines)
+  # Checkout の権威ある最終ゲート（ADR-0011）。カートは非予約なので、投入後に
+  # 販売停止になった / 在庫が尽きた商品をここで弾く。減算は Checkout の瞬間だけ。
+  # - 販売停止（suspended）は在庫に関係なく不可。顧客には「売り切れ」として伝える。
+  # - 追跡品（stock 非 nil）は `stock >= 数量` の条件付きで原子的に減算し、売り越しを防ぐ。
+  # - 無制限（nil）は減算対象外。
+  # 1 行でも不可なら不足明細を添えて raise し、トランザクション全体をロールバックさせる。
+  def reserve_stock!(lines)
     shortfalls = []
     quantity_by_item(lines).each do |item_id, qty|
       item = MenuItem.find_by(id: item_id)
-      next if item.nil? || item.stock.nil?
+      next if item.nil?
+
+      if item.suspended?
+        shortfalls << { name: item.name, remaining: 0 } # 顧客表示は「売り切れ」に畳む
+        next
+      end
+      next if item.stock.nil?
 
       updated = MenuItem.where(id: item_id).where("stock >= ?", qty).update_all([ "stock = stock - ?", qty ])
       shortfalls << { name: item.name, remaining: item.stock } if updated.zero?
