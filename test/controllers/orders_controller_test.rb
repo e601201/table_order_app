@@ -87,6 +87,26 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # --- 販売不可品はカートに入らない（ADR-0011） ---
+
+  test "売り切れ商品はカートに追加されない" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    @item.update!(stock: 0)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+
+    get "/order/cart"
+    assert_empty inertia.props[:cart_items]
+  end
+
+  test "販売停止商品はカートに追加されない" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    @item.update!(suspended: true)
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+
+    get "/order/cart"
+    assert_empty inertia.props[:cart_items]
+  end
+
   # --- テーブル番号の入口指定（デモ入口で必須。イシュー #41） ---
 
   test "in_store は入口で渡した table_number で描画する" do
