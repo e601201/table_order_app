@@ -1,9 +1,12 @@
-import { Head, Link } from '@inertiajs/react'
+import { Deferred, Head, Link } from '@inertiajs/react'
 import { Wallet, ShoppingBag, Receipt, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
 import { kitchenStatusMeta, paymentStatusMeta } from '@/lib/orderStatus'
-import type { AdminDashboardData, AdminOrderRow } from '@/types'
+import type { AdminDashboardData, AdminOrderRow, DashboardSalesTrendPoint, DashboardPopularItem } from '@/types'
+
+// 遅延ロード中のスケルトン背景（カード白地より一段暗いニュートラルグレー）。
+const SKELETON_BG = '#ececec'
 
 // 統計ダッシュボード（ADR-0005 更新）。KPI3枚（売上=paid基準 / 注文数=placed基準 / 平均注文単価=paid売上÷paid注文数）、
 // 売上推移（paid×paid_at の直近7日を CSS バーで描画・gem/chartライブラリなし）、人気メニュー TOP5、最近の注文プレビュー。
@@ -111,7 +114,7 @@ function Card({
   )
 }
 
-function SalesTrend({ points }: { points: AdminDashboardData['sales_trend'] }) {
+function SalesTrend({ points }: { points: DashboardSalesTrendPoint[] }) {
   const maxAmount = Math.max(...points.map((p) => p.amount), 0)
   return (
     <div>
@@ -155,7 +158,7 @@ function SalesTrend({ points }: { points: AdminDashboardData['sales_trend'] }) {
   )
 }
 
-function PopularItems({ items }: { items: AdminDashboardData['popular_items'] }) {
+function PopularItems({ items }: { items: DashboardPopularItem[] }) {
   if (items.length === 0) {
     return (
       <p className="py-8 text-center" style={{ fontSize: 14, color: adminColors.textSecondary }}>
@@ -241,6 +244,70 @@ function RecentOrders({ orders }: { orders: AdminOrderRow[] }) {
   )
 }
 
+// --- 遅延ロード中のスケルトン（実コンテンツの寸法に寄せてレイアウトシフトを防ぐ） ---
+
+// 売上推移グラフのプレースホルダ（固定高のバー7本＋X軸ラベル）。
+function SalesTrendSkeleton() {
+  const barHeights = [40, 70, 55, 90, 45, 75, 60]
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-2" style={{ height: 160 }}>
+        {barHeights.map((h, i) => (
+          <div
+            key={i}
+            className="flex-1 animate-pulse rounded-t"
+            style={{ height: `${h}%`, backgroundColor: SKELETON_BG }}
+          />
+        ))}
+      </div>
+      <div
+        className="mt-2 flex justify-between gap-2"
+        style={{ borderTop: `1px solid ${adminColors.border}`, paddingTop: 8 }}
+      >
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="h-3 flex-1 animate-pulse rounded" style={{ backgroundColor: SKELETON_BG }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// 人気メニューのプレースホルダ（5行）。
+function PopularItemsSkeleton() {
+  return (
+    <ol className="flex flex-col gap-2.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <li key={i} className="flex items-center gap-3">
+          <div className="h-6 w-6 shrink-0 animate-pulse rounded-md" style={{ backgroundColor: SKELETON_BG }} />
+          <div className="h-4 flex-1 animate-pulse rounded" style={{ backgroundColor: SKELETON_BG }} />
+          <div className="h-4 w-16 animate-pulse rounded" style={{ backgroundColor: SKELETON_BG }} />
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+// 最近の注文のプレースホルダ（5行・本体の行レイアウトに合わせる）。
+function RecentOrdersSkeleton() {
+  return (
+    <div className="flex flex-col">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 py-3"
+          style={{ borderTop: `1px solid ${adminColors.border}` }}
+        >
+          <div className="animate-pulse rounded" style={{ width: 130, height: 32, backgroundColor: SKELETON_BG }} />
+          <div className="h-8 flex-1 animate-pulse rounded" style={{ backgroundColor: SKELETON_BG }} />
+          <div className="h-4 animate-pulse rounded" style={{ width: 90, backgroundColor: SKELETON_BG }} />
+          <div className="h-6 animate-pulse rounded" style={{ width: 180, backgroundColor: SKELETON_BG }} />
+          <div className="h-4 animate-pulse rounded" style={{ width: 56, backgroundColor: SKELETON_BG }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function Dashboard({ kpi, sales_trend, popular_items, recent_orders }: AdminDashboardData) {
   return (
     <>
@@ -281,11 +348,15 @@ export default function Dashboard({ kpi, sales_trend, popular_items, recent_orde
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2">
               <Card title="売上推移" subtitle="過去7日間の売上">
-                <SalesTrend points={sales_trend} />
+                <Deferred data="sales_trend" fallback={<SalesTrendSkeleton />}>
+                  <SalesTrend points={sales_trend ?? []} />
+                </Deferred>
               </Card>
             </div>
             <Card title="人気メニュー" subtitle="本日の注文数ランキング">
-              <PopularItems items={popular_items} />
+              <Deferred data="popular_items" fallback={<PopularItemsSkeleton />}>
+                <PopularItems items={popular_items ?? []} />
+              </Deferred>
             </Card>
           </div>
 
@@ -304,7 +375,9 @@ export default function Dashboard({ kpi, sales_trend, popular_items, recent_orde
               </Link>
             }
           >
-            <RecentOrders orders={recent_orders} />
+            <Deferred data="recent_orders" fallback={<RecentOrdersSkeleton />}>
+              <RecentOrders orders={recent_orders ?? []} />
+            </Deferred>
           </Card>
         </div>
       </AdminLayout>
