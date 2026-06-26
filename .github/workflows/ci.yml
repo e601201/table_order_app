@@ -157,7 +157,7 @@ jobs:
           bundler-cache: true
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Restore Rails master key
         # .kamal/secrets が config/master.key と `rails credentials:fetch` を参照するため復元する。
