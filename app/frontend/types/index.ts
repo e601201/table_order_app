@@ -259,7 +259,8 @@ export type AdminDashboardData = {
     orders: DashboardKpi
     average_order_value: DashboardKpi
   }
-  sales_trend: DashboardSalesTrendPoint[]
-  popular_items: DashboardPopularItem[]
-  recent_orders: AdminOrderRow[]
+  // 遅延ロード（InertiaRails.defer / group: "secondary"）。初期描画時は未取得で undefined。
+  sales_trend?: DashboardSalesTrendPoint[]
+  popular_items?: DashboardPopularItem[]
+  recent_orders?: AdminOrderRow[]
 }

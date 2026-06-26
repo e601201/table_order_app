@@ -35,6 +35,17 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     assert_inertia_component "admin/Dashboard"
   end
 
+  # KPI は above the fold で即時、それ以外は初期描画後に遅延ロードする（flicker-free 化の意図を固定）。
+  test "KPI は即時・グラフ/人気/最近の注文は secondary グループで遅延ロードする" do
+    login_as(:admin_staff)
+    get admin_dashboard_path
+
+    # KPI は初期レスポンスに含まれる。
+    assert inertia.props.key?(:kpi)
+    # 残り3つは初期レスポンスには値を含まず、deferredProps（secondary グループ）に載る。
+    assert_inertia_deferred_props :sales_trend, :popular_items, :recent_orders, group: :secondary
+  end
+
   # --- KPI（grill 決定 / ADR-0005 更新: 売上=paid基準 / 注文数=placed基準 / 平均=paid売上÷paid注文数）---
 
   test "本日の売上は会計済み注文の total 合計のみ" do
@@ -107,6 +118,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
   test "売上推移は7日分で末尾が本日・先頭が6日前" do
     login_as(:admin_staff)
     get admin_dashboard_path
+    inertia_load_deferred_props
 
     trend = inertia.props[:sales_trend]
     assert_equal 7, trend.length
@@ -121,6 +133,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     create_order(paid: false, total: 9999)                     # 未会計は除外
 
     get admin_dashboard_path
+    inertia_load_deferred_props
     by_date = inertia.props[:sales_trend].index_by { |d| d[:date] }
     assert_equal 1000, by_date[Time.zone.today.iso8601][:amount]
     assert_equal 500, by_date[(Time.zone.today - 2).iso8601][:amount]
@@ -140,6 +153,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     ])
 
     get admin_dashboard_path
+    inertia_load_deferred_props
     popular = inertia.props[:popular_items].map { |p| [ p[:name], p[:quantity] ] }
     assert_equal [ [ "A", 5 ], [ "B", 3 ], [ "C", 3 ], [ "D", 2 ], [ "E", 1 ] ], popular
   end
@@ -151,6 +165,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     create_order(items: [ { name: "唐揚げ", quantity: 9, unit_price: 100 } ], placed_at: 1.day.ago)  # 前日は除外
 
     get admin_dashboard_path
+    inertia_load_deferred_props
     popular = inertia.props[:popular_items]
     assert_equal 1, popular.length
     assert_equal "唐揚げ", popular.first[:name]
@@ -162,6 +177,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     create_order(items: [ { name: "唐揚げ", quantity: 9, unit_price: 100 } ], placed_at: 1.day.ago)
 
     get admin_dashboard_path
+    inertia_load_deferred_props
     assert_empty inertia.props[:popular_items]
   end
 
@@ -175,6 +191,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     create_order(order_number: "#A-YDAY", placed_at: 1.day.ago)
 
     get admin_dashboard_path
+    inertia_load_deferred_props
     recent = inertia.props[:recent_orders]
     numbers = recent.map { |o| o[:order_number] }
     assert_equal [ "#A-NEW", "#A-OLD" ], numbers
@@ -192,6 +209,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
     7.times { |i| create_order(order_number: "#A-#{i}", placed_at: i.minutes.ago) }
 
     get admin_dashboard_path
+    inertia_load_deferred_props
     assert_equal 5, inertia.props[:recent_orders].length
   end
 

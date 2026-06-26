@@ -15,10 +15,13 @@ module Admin
 
     def index
       render inertia: "admin/Dashboard", props: {
+        # KPI は above the fold。初期描画で即時に返す。
         kpi: kpi,
-        sales_trend: sales_trend,
-        popular_items: popular_items,
-        recent_orders: recent_orders
+        # グラフ・ランキング・最近の注文は初期描画後に遅延ロード。
+        # 同一グループ（secondary）にまとめ、1回の追従リクエストで並行取得する。
+        sales_trend: InertiaRails.defer(group: "secondary") { sales_trend },
+        popular_items: InertiaRails.defer(group: "secondary") { popular_items },
+        recent_orders: InertiaRails.defer(group: "secondary") { recent_orders }
       }
     end
 

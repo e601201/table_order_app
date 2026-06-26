@@ -100,7 +100,7 @@ export default function OrderHome({
               </div>
               <div className="flex gap-3 md:gap-4 px-4 md:px-6 overflow-x-auto scrollbar-hide">
                 {recommendedItems.map((item) => (
-                  <Link key={item.id} href={`/order/item/${item.id}`} className="shrink-0 w-[155px] md:w-[220px] rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
+                  <Link key={item.id} href={`/order/item/${item.id}`} prefetch cacheFor={['30s', '1m']} className="shrink-0 w-[155px] md:w-[220px] rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
                     <div className="relative h-[120px] md:h-[140px] rounded-t-xl overflow-hidden">
                       <img src={item.image} alt={item.name} className={`w-full h-full object-cover ${!item.sellable ? 'opacity-40 grayscale' : ''}`} />
                       <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 rounded-full bg-[#FFB300]">
@@ -136,7 +136,7 @@ export default function OrderHome({
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {categoryItems.map((item) => (
-                  <Link key={item.id} href={`/order/item/${item.id}`} className="rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
+                  <Link key={item.id} href={`/order/item/${item.id}`} prefetch cacheFor={['30s', '1m']} className="rounded-2xl bg-white shadow-[0_2px_8px_rgba(26,18,16,0.03)]">
                     <div className="relative h-[120px] md:h-[160px] rounded-t-xl overflow-hidden">
                       <img src={item.image} alt={item.name} className={`w-full h-full object-cover ${!item.sellable ? 'opacity-40 grayscale' : ''}`} />
                       {!item.sellable && (
