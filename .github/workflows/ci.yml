@@ -167,12 +167,21 @@ jobs:
           chmod 600 config/master.key
 
       - name: Set up SSH key
-        # config/deploy.yml の ssh.keys と同じパスに秘密鍵を配置し、サーバのホスト鍵を登録する
+        # config/deploy.yml の ssh.keys と同じパスに秘密鍵を配置する
         run: |
           mkdir -p ~/.ssh/sakura_vps
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/sakura_vps/sakura_vps
           chmod 600 ~/.ssh/sakura_vps/sakura_vps
-          ssh-keyscan -H 153.120.44.106 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Add known host key
+        # 本番サーバの既知ホスト鍵を平文で固定登録する。
+        # ssh-keyscan に頼ると net-ssh（Kamal/SSHKit）がホスト鍵を照合できず HostKeyMismatch になるため、
+        # 検証済みの正しい公開鍵を直接記載する（公開鍵なので秘密情報ではない）。
+        run: |
+          mkdir -p ~/.ssh
+          echo '153.120.44.106 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINQY7Kl5TkoMh71N6ZZhKKXJJtmvfLnqjjQwII+YfJJc' >> ~/.ssh/known_hosts
+          echo '153.120.44.106 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJUUFYeEtCcVIQylquPIQWcGbkdM5N+U2eFET1Pw0n+hgPbCxakTNnHHhJxh+/I2JT17ms9AwaP/ESOZ+pGZP0I=' >> ~/.ssh/known_hosts
+          echo '153.120.44.106 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCl5wiaIRRY2WM4cMmuHGh1KXwIY08HC0fxgMRjF+fBdmsYEfN4bxXLUz06wAupSgyDvyZKX/1CQkGvwDJmoYkFPDpEuwjalv2hsrfECKZEMP/zxh4eDc222Y93gF47m9iy+riS9rm2XPSl16nBlC+QBPSzGJd5hGzYaVYVvGCb8Izc/HW5i7/TlwPFbbe2W0OIf/zERRR4j+wKeoA8/sVecCdr81gSp0wOwXNxtHuATy64rmWeaPUTrpUzBF4tIn5n4JaHWHPpdFIi9nN/xSdwYOkmAFcPjjXBsBcSFM4WyTuqS21PMU/tCT0vX+ZtgVMyuUZd+hi+lODdGIXWSs7r0qG1MGxiK4VbXOkJndo5Dk2XCjCbPoXf18dn5SVLk3CafNuRFEOmDql9mT73hD5NZd/nfMHrOG//Gy6TpxoohocfIfSdE33dzlWaZAtTEfpuRoi9mory9m6GiDdm0WM+/GbTowZQJyzokhDc9eKpYMHztGfAV8+8Ik+fHJFeJNk=' >> ~/.ssh/known_hosts
 
       - name: Kamal deploy
         run: bin/kamal deploy
