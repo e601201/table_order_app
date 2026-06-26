@@ -7,7 +7,7 @@
     "vitest": "^4.1.9"
   },
   "dependencies": {
-    "@inertiajs/react": "^3.4.0",
+    "@inertiajs/react": "^3.5.0",
     "@line/liff": "^2.29.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/typography": "^0.5.20",
