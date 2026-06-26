@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [ main ]
+  workflow_dispatch:   # Actions タブから手動デプロイも可能にする
 
 jobs:
   scan_ruby:
@@ -121,3 +122,51 @@ jobs:
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare test
+
+  # main への push（＝ PR マージ）で、全チェック通過後に Kamal で本番デプロイする。
+  # 必要な GitHub Secrets:
+  #   RAILS_MASTER_KEY … config/master.key の中身（.kamal/secrets が credentials を復号するのに使う）
+  #   SSH_PRIVATE_KEY  … デプロイ先サーバ（root@153.120.44.106）の SSH 秘密鍵
+  deploy:
+    needs: [ scan_ruby, lint, js_test, test ]
+    # PR では走らせず、main への push と手動実行（workflow_dispatch）時のみデプロイ
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+
+    # 同時に複数デプロイが走らないよう直列化する（実行中のデプロイは中断しない）
+    concurrency:
+      group: kamal-deploy-production
+      cancel-in-progress: false
+
+    env:
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Restore Rails master key
+        # .kamal/secrets が config/master.key と `rails credentials:fetch` を参照するため復元する。
+        # （RAILS_MASTER_KEY / POSTGRES_PASSWORD / LINE_* / KAMAL_REGISTRY_PASSWORD はすべて credentials から解決される）
+        run: |
+          echo "$RAILS_MASTER_KEY" > config/master.key
+          chmod 600 config/master.key
+
+      - name: Set up SSH key
+        # config/deploy.yml の ssh.keys と同じパスに秘密鍵を配置し、サーバのホスト鍵を登録する
+        run: |
+          mkdir -p ~/.ssh/sakura_vps
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/sakura_vps/sakura_vps
+          chmod 600 ~/.ssh/sakura_vps/sakura_vps
+          ssh-keyscan -H 153.120.44.106 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Kamal deploy
+        run: bin/kamal deploy
