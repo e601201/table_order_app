@@ -142,6 +142,12 @@ jobs:
       RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
 
     steps:
+      - name: Install system packages
+        # .kamal/secrets の `rails credentials:fetch` は Rails を起動してシークレットを取り出すため、
+        # ruby-vips（libvips）/ pg（libpq）のネイティブ依存が必要。これが無いと起動に失敗し、
+        # KAMAL_REGISTRY_PASSWORD などが空になって docker login が落ちる。
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+
       - name: Checkout code
         uses: actions/checkout@v7
 
