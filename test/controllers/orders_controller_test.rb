@@ -257,6 +257,150 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal order.total, row[:total]
   end
 
+  # --- 注文状況（In-store・session 紐付け・調理軸のみ。ADR-0012） ---
+
+  test "in_store の checkout 後 /order/status はその注文を出す" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    order = Order.last
+
+    get "/order/status"
+    assert_response :success
+    assert_inertia_component "orders/Status"
+    assert_equal [ order.id ], inertia.props[:orders].map { |o| o[:id] }
+  end
+
+  test "/order/status は自 session が出した注文だけを出す（他 session の注文は出さない）" do
+    # 別 session の in_store 注文（DB には在るが自分のリストには無い）
+    stranger = Order.create!(
+      order_number: "20991231-001", order_type: :in_store, table_number: 9,
+      status: :pending, subtotal: 1000, tax: 100, total: 1100, placed_at: Time.current
+    )
+
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+
+    # まだ注文していない → 空
+    get "/order/status"
+    assert_empty inertia.props[:orders]
+
+    # 自分が1件 checkout → 自分のだけが出る（stranger は出ない）
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    mine = Order.last
+
+    get "/order/status"
+    ids = inertia.props[:orders].map { |o| o[:id] }
+    assert_equal [ mine.id ], ids
+    assert_not_includes ids, stranger.id
+  end
+
+  test "/order/status は複数ラウンドをラウンド順（古い順）で出す" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    travel_to Time.current do
+      post "/order/checkout"
+    end
+    first = Order.last
+
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    travel_to 1.minute.from_now do
+      post "/order/checkout"
+    end
+    second = Order.last
+
+    get "/order/status"
+    assert_equal [ first.id, second.id ], inertia.props[:orders].map { |o| o[:id] }
+  end
+
+  test "/order/status は提供前クローズを unavailable に畳み、walkout は提供済みのまま出す" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+
+    # 提供前クローズ（品切れ）: pending のまま打ち切り → unavailable
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    out_of_stock = Order.last
+    out_of_stock.update!(closed_at: Time.current, closure_reason: :out_of_stock)
+
+    # walkout: 提供済み + 打ち切り → 調理軸は served のまま、unavailable ではない
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    walkout = Order.last
+    walkout.update!(status: :served, closed_at: Time.current, closure_reason: :walkout)
+
+    get "/order/status"
+    rows = inertia.props[:orders].index_by { |o| o[:id] }
+
+    assert rows[out_of_stock.id][:unavailable], "提供前クローズは unavailable: true"
+    assert_not rows[walkout.id][:unavailable], "walkout は unavailable: false（提供済みは真実）"
+    assert_equal "served", rows[walkout.id][:status]
+  end
+
+  test "/order/status の行は会計軸キーを一切含まない（CONTEXT.md / ADR-0012 の不変条件）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    # walkout に打ち切っても、客向けには会計軸（Closed / 理由）を一切出さない
+    Order.last.update!(status: :served, closed_at: Time.current, closure_reason: :walkout)
+
+    get "/order/status"
+    row = inertia.props[:orders].first
+    %i[paid closed payment_status closure_reason paid_at closed_at].each do |key|
+      assert_not row.key?(key), "会計軸キー #{key} を漏らしている"
+    end
+  end
+
+  test "/order/status は本日の注文だけを出す（session に残る昨日の注文は出さない）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+
+    # 昨日 checkout（id は session に残るが本日スコープ外）
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    travel_to 1.day.ago do
+      post "/order/checkout"
+    end
+    yesterday = Order.last
+
+    # 本日 checkout
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    today = Order.last
+
+    get "/order/status"
+    ids = inertia.props[:orders].map { |o| o[:id] }
+    assert_includes ids, today.id
+    assert_not_includes ids, yesterday.id
+  end
+
+  test "新セッション入場（welcome 経由）で前の客の注文状況が消える" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+
+    get "/order/status"
+    assert_equal 1, inertia.props[:orders].length
+
+    # 次の客が welcome 入口から再入場（order_type param 付き）→ placed-order がクリアされる
+    get "/order", params: { order_type: "in_store", table_number: 8 }
+    get "/order/status"
+    assert_empty inertia.props[:orders]
+  end
+
+  test "/order/status の各注文は表示用の order_number と明細を持つ" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
+    post "/order/checkout"
+    order = Order.last
+
+    get "/order/status"
+    row = inertia.props[:orders].first
+    assert_equal order.display_number, row[:order_number]
+    assert_equal 2, row[:item_count]
+    assert_equal 1, row[:items].length
+    assert_equal @item.name, row[:items].first[:name]
+    assert_equal 2, row[:items].first[:quantity]
+  end
+
   private
 
   # takeout モードでログイン済みのカートを用意する（checkout 系テストの前段）

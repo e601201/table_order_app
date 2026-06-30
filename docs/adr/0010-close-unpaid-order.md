@@ -50,4 +50,5 @@ status: accepted
 ## 参照
 
 - ADR-0001（二軸状態）/ ADR-0005（キャンセル概念の先送り・admin 閲覧専用）/ ADR-0009（手渡し＝会計統合が no-show の滞留位置を `Ready + Unpaid` に動かした）
+- ADR-0012（In-store の `注文状況` surface が、本 ADR の「In-store に履歴 surface が無いから『キャンセル』は正直」という根拠を「status surface が会計軸を描かないから」に載せ替える — Consequence #5 を改訂）
 - `CONTEXT.md`: `Closed` / `Close`（打ち切り・打ち切り解除）/ `Unpaid` / `Cashier` / `OrderClosed` / 例文ダイアログ

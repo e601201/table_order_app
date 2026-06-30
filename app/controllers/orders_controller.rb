@@ -16,8 +16,12 @@ class OrdersController < ApplicationController
     # table_number は正の整数だけを session に焼くため、ここで nil なら未確定。
     return redirect_to(root_path) if order_type == "in_store" && table_number.blank?
 
-    # ウェルカム画面からの遷移は「新しい客のセッション開始」として Cart をクリアする
-    clear_cart if params[:order_type].present?
+    # ウェルカム画面からの遷移は「新しい客のセッション開始」。Cart と注文状況（前の客が
+    # 出した placed-order リスト）を両方クリアし、席の使い回しで前の客の状況を残さない（ADR-0012）。
+    if params[:order_type].present?
+      clear_cart
+      session.delete(:placed_order_ids)
+    end
 
     lines = cart_lines
     render inertia: "orders/Home", props: {
@@ -111,6 +115,9 @@ class OrdersController < ApplicationController
     end
 
     attach_service_notification_token(order)
+    # In-store の注文状況（ADR-0012）は session が出した注文だけを描く。Checkout でこの
+    # session の placed-order リストに id を積む（takeout は注文履歴があるので積まない）。
+    session[:placed_order_ids] = Array(session[:placed_order_ids]) + [ order.id ] if order.in_store?
     clear_cart
     redirect_to "/order/complete/#{order.id}"
   rescue InsufficientStock => e
@@ -128,6 +135,20 @@ class OrdersController < ApplicationController
     return redirect_to("/order") if order.takeout? && order.line_account_id != current_line_account&.id
 
     render inertia: "orders/OrderComplete", props: { order: serialize_placed_order(order) }
+  end
+
+  # 注文状況（ADR-0012）: In-store の客が、この session で出した当日の注文の調理進捗を
+  # ライブで見る画面。session 紐付け（:id URL でも table_number でもない）・調理軸のみ・
+  # 会計軸は一切描かない。フロントは usePoll で orders prop だけを差分取得する。
+  def status
+    ids = Array(session[:placed_order_ids])
+    # 本日（JST 暦日）の自 session の in_store 注文だけ。session に id が残っていても
+    # 日付をまたいだ注文は当日の状況一覧から落ちる。ラウンド順（古い順）に固定。
+    orders = Order.in_store.where(id: ids).placed_today.includes(:order_items).order(:placed_at, :id)
+    render inertia: "orders/Status", props: {
+      table_number: table_number,
+      orders: orders.map { |order| serialize_status_order(order) }
+    }
   end
 
   # 注文履歴（ADR-0008）: 現在進行中＋過去を兼ねる本人限定の一覧。
@@ -218,6 +239,30 @@ class OrdersController < ApplicationController
           quantity:      item.quantity,
           customization: order_item_customization(item),
           line_total:    item.line_total
+        }
+      end
+    }
+  end
+
+  # 注文状況の1行（ADR-0012）。調理軸だけを送り、会計軸キー（paid/closed/payment_status/
+  # closure_reason）は決して含めない — walkout の「キャンセル」を客の目に出さない不変条件を
+  # サーバで担保する。
+  def serialize_status_order(order)
+    {
+      id:           order.id,
+      order_number: order.display_number,
+      status:       order.status,
+      # 提供前クローズ（closed かつ 未 served）だけを二値に畳む。提供済みで凍結した walkout は
+      # 調理軸 served のまま（「提供済み」表示が真実）。理由コードは送らない。
+      unavailable:  order.closed? && !order.served?,
+      placed_at:    order.placed_at.iso8601,
+      item_count:   order.order_items.sum(&:quantity),
+      items: order.order_items.map do |item|
+        {
+          id:            item.id,
+          name:          item.name,
+          quantity:      item.quantity,
+          customization: order_item_customization(item)
         }
       end
     }

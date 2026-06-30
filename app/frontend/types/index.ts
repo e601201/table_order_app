@@ -147,6 +147,28 @@ export type HistoryOrder = {
   items: HistoryOrderItem[]
 }
 
+// 注文状況（ADR-0012）の1明細。調理軸ライブ画面の表示に必要な最小限。
+export type StatusOrderItem = {
+  id: number
+  name: string
+  quantity: number
+  customization: string
+}
+
+// 注文状況（/order/status）の1行。In-store・session 紐付け・調理軸のみ（ADR-0012）。
+// 会計軸（payment_status / closed / closure_reason）は意図的に持たない — walkout の
+// 「キャンセル」を客に出さない不変条件をサーバ側で畳み、unavailable（提供前クローズの二値）
+// と調理 status だけを受け取る。ラベルは orderStatus.ts の inStoreOrderStatusMeta が引く。
+export type StatusOrder = {
+  id: number
+  order_number: string
+  status: KitchenOrderStatus
+  unavailable: boolean
+  placed_at: string
+  item_count: number
+  items: StatusOrderItem[]
+}
+
 export type KitchenOrderItem = {
   id: number
   name: string

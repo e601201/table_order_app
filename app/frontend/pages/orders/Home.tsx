@@ -1,6 +1,6 @@
 import { Head, Link } from '@inertiajs/react'
 import { useMemo, useState } from 'react'
-import { ShoppingCart, Flame, Star, History } from 'lucide-react'
+import { ShoppingCart, Flame, Star, History, CookingPot } from 'lucide-react'
 import { orderedCategories, categoryLabel, categoryEmoji } from '@/lib/menuCategory'
 import type { MenuItem, OrderType } from '@/types'
 
@@ -54,6 +54,16 @@ export default function OrderHome({
               >
                 <History className="w-4 h-4 text-[#6D5D4B]" />
                 <span className="text-xs md:text-sm font-semibold text-[#6D5D4B]">履歴</span>
+              </Link>
+            )}
+            {/* 注文状況は session に紐づく in_store 専用ページ（ADR-0012） */}
+            {order_type === 'in_store' && (
+              <Link
+                href="/order/status"
+                className="flex items-center gap-1 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg bg-[#FFF3E0] border border-[#F0E0D0]"
+              >
+                <CookingPot className="w-4 h-4 text-[#6D5D4B]" />
+                <span className="text-xs md:text-sm font-semibold text-[#6D5D4B]">状況</span>
               </Link>
             )}
             <div className="flex items-center gap-1 md:gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-lg bg-[#FFF8E1] border-[1.5px] border-[#FFB300]">
