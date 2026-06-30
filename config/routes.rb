@@ -61,6 +61,8 @@ Rails.application.routes.draw do
     get "complete",     to: redirect("/order")
     # 注文履歴（ADR-0008）。LINE ログイン必須・本人の注文だけを返す。
     get "history", to: "orders#history", as: :history
+    # 注文状況（ADR-0012）。In-store 限定・session 紐付け・調理軸のみのライブ画面。
+    get "status", to: "orders#status", as: :status
   end
 
   # Defines the root path route ("/")

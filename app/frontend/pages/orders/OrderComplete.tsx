@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react'
-import { Check, Home, CreditCard, History } from 'lucide-react'
+import { Check, Home, CreditCard, History, CookingPot } from 'lucide-react'
 import type { PlacedOrder } from '@/types'
 
 interface OrderCompleteProps {
@@ -144,6 +144,16 @@ export default function OrderComplete({ order }: OrderCompleteProps) {
             >
               <History className="w-5 h-5 text-[#1A1210]" />
               <span className="text-base font-semibold text-[#1A1210]">注文履歴を見る</span>
+            </Link>
+          )}
+          {/* In-store は session 紐づきの注文状況（調理進捗）へ（ADR-0012） */}
+          {order_type === 'in_store' && (
+            <Link
+              href="/order/status"
+              className="flex items-center justify-center gap-2.5 w-full h-12 rounded-2xl bg-[#FFF3E0] border-[1.5px] border-[#F0E0D0]"
+            >
+              <CookingPot className="w-5 h-5 text-[#1A1210]" />
+              <span className="text-base font-semibold text-[#1A1210]">注文状況を見る</span>
             </Link>
           )}
           <Link
