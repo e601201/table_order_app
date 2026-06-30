@@ -1,4 +1,5 @@
 import { Head, Link, usePoll } from '@inertiajs/react'
+import { useEffect } from 'react'
 import { ArrowLeft, CookingPot } from 'lucide-react'
 import { inStoreOrderStatusMeta } from '@/lib/orderStatus'
 import type { StatusOrder } from '@/types'
@@ -19,7 +20,15 @@ function formatPlacedAt(iso: string): string {
 // ライブで見る画面。session 紐付け・調理軸のみ・会計軸は描かない。更新は usePoll で
 // orders prop だけを差分取得する（キッチン盤面と同じ 7 秒・背景タブで自動スロットリング）。
 export default function Status({ table_number, orders }: StatusProps) {
-  usePoll(7000, { only: ['orders'] })
+  // 新ラウンドは poll ではなく全画面遷移（checkout→完了→遷移で remount）でしか増えないため、
+  // この画面の poll は既存注文の調理進捗を映すだけ。全注文が終端表示（提供済み or 提供前クローズ）に
+  // 達したら、以降 poll が取れる差分は無い — 止めて無駄な DB/電池消費を避ける。
+  const allTerminal =
+    orders.length > 0 && orders.every((order) => order.unavailable || order.status === 'served')
+  const { stop } = usePoll(7000, { only: ['orders'] }, { autoStart: !allTerminal })
+  useEffect(() => {
+    if (allTerminal) stop()
+  }, [allTerminal, stop])
 
   return (
     <>

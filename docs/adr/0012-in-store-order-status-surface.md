@@ -37,7 +37,7 @@ status: accepted
 - `session[:placed_order_ids]`（配列）を追加。Checkout（`in_store` のみ）で `order.id` を append、welcome 入口で `clear_cart` と同時にクリア。
 - ルートは `GET /order/status`（`:id` を取らない）。session の id 群を読み、`in_store` ＋本日でフィルタ。URL からの列挙は不可。
 - **新 canonical 用語 `注文状況`**（CONTEXT.md）と、対の `注文履歴`（従来 Takeout 限定だが未定義だったものを明文化）。
-- **ADR-0010 Consequence #5 を改訂**: walkout の「キャンセル」が嘘にならない根拠を「In-store に履歴 surface が無い」→「In-store の唯一の surface（`注文状況`）が会計軸を描かず、提供前クローズを中立文言で表す」に載せ替え。ADR-0010 自体は accepted のまま（状態機械は不変）、本 ADR が理由を上書きする。
+- **ADR-0010 の客向け表示 Consequence（「キャンセル」バッジの正直さの根拠）を改訂**: walkout の「キャンセル」が嘘にならない根拠を「In-store に履歴 surface が無い」→「In-store の唯一の surface（`注文状況`）が会計軸を描かず、提供前クローズを中立文言で表す」に載せ替え。ADR-0010 自体は accepted のまま（状態機械は不変）、本 ADR が理由を上書きする。`orderStatus.ts` の `customerClosedBadge` 直上のコメントも同根拠に更新。
 - 提供済み注文は来店中ずっと「提供済み」で残る（畳む / secondary 表示可）。会計軸は出さないので「お会計はお食事のあとでレジへ」は静的リマインダ文言として添える程度に留める。
 - Takeout は従来どおり `/order/history`（`注文履歴`）＋ `OrderReady` LINE 通知。`注文状況` は `In-store` 限定で takeout には出さない。
 - `:id` 列挙負債（イシュー #29）は OrderComplete 側に依然残る — 本 ADR はそれを**広げない**ことを選んだに留まり、解消はしない。

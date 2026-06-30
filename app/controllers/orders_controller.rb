@@ -141,6 +141,10 @@ class OrdersController < ApplicationController
   # ライブで見る画面。session 紐付け（:id URL でも table_number でもない）・調理軸のみ・
   # 会計軸は一切描かない。フロントは usePoll で orders prop だけを差分取得する。
   def status
+    # 注文状況は In-store 限定（ADR-0012）。Takeout は本人の注文履歴がその役割を果たすため、
+    # そちらへ誘導する（identity 紐付け・来店跨ぎ。ADR-0008）。
+    return redirect_to("/order/history") if order_type == "takeout"
+
     ids = Array(session[:placed_order_ids])
     # 本日（JST 暦日）の自 session の in_store 注文だけ。session に id が残っていても
     # 日付をまたいだ注文は当日の状況一覧から落ちる。ラウンド順（古い順）に固定。

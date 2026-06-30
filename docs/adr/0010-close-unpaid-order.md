@@ -42,7 +42,7 @@ status: accepted
 - 打ち切られた注文は**全作業キューから消える**: キッチン盤面（当日4レーン）と `awaiting_payment` / `for_cashier_today` が `closed_at: nil` を要求するようになる。
 - レジ surface には (1) キュー外の未払い注文（品切れ対象の `Pending` 等）に届く導線と、(2) 当日の Closed 一覧（reopen の到達経路）が必要になる。
 - `OrderClosed` イベントを定義するが**購読者ゼロ**（In-store の `OrderReady` と同じ「誰も観測しない」パターン）。LINE 通知は送らない — 将来の品切れ通知（店に向かう客を止める）は購読者を足すだけで実現でき、状態機械には触れない。reopen はイベントを発生させない。
-- 客向け表示: LINE 注文履歴に「キャンセル」バッジ1種（理由を問わず）。嘘をつく唯一の組合せ（walkout）は In-store 限定で、In-store の客に履歴 surface が存在しないため、客の目に触れる場所では「キャンセル」は常に正直。スタッフ面は「打ち切り」。
+- 客向け表示: 「キャンセル」バッジ1種（理由を問わず）は Takeout の注文履歴に出す。嘘をつく唯一の組合せ（walkout）は In-store 限定。**当初の根拠「In-store の客に履歴 surface が存在しないため客の目に触れない」は ADR-0012 で改訂**され、現在の根拠は「In-store 客の surface（注文状況 `/order/status`）が会計軸を描かない — walkout は調理軸 `Served` のまま『提供済み』と表示し、提供前クローズは中立文言にする」。いずれにせよ「キャンセル」が嘘で客の目に触れることはない。スタッフ面は「打ち切り」。
 - 指標: 売上・平均注文単価・7日トレンドは paid 基準のため構造的に無風。**注文数 KPI と人気 Top5（placed 基準）には Closed を含めたまま**とする — `no_show` / `walkout` / `out_of_stock` は実在した需要であり、除外するとむしろ需要指標が嘘になる。
 - `/admin/orders` は閲覧専用のまま（ADR-0005 不変）、Closed バッジ + 理由を表示する。
 - 客起点のセルフキャンセル・返金（`Paid` の取り消し）は引き続きスコープ外。
@@ -50,5 +50,5 @@ status: accepted
 ## 参照
 
 - ADR-0001（二軸状態）/ ADR-0005（キャンセル概念の先送り・admin 閲覧専用）/ ADR-0009（手渡し＝会計統合が no-show の滞留位置を `Ready + Unpaid` に動かした）
-- ADR-0012（In-store の `注文状況` surface が、本 ADR の「In-store に履歴 surface が無いから『キャンセル』は正直」という根拠を「status surface が会計軸を描かないから」に載せ替える — Consequence #5 を改訂）
+- ADR-0012（In-store の `注文状況` surface が、本 ADR の「In-store に履歴 surface が無いから『キャンセル』は正直」という根拠を「status surface が会計軸を描かないから」に載せ替える — Consequences の客向け表示バレットを改訂）
 - `CONTEXT.md`: `Closed` / `Close`（打ち切り・打ち切り解除）/ `Unpaid` / `Cashier` / `OrderClosed` / 例文ダイアログ

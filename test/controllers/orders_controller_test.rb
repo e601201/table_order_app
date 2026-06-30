@@ -386,6 +386,14 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_empty inertia.props[:orders]
   end
 
+  test "takeout セッションの /order/status は注文履歴へ誘導する（注文状況は In-store 限定。ADR-0012）" do
+    line_login_as(line_accounts(:taro))
+    get "/order", params: { order_type: "takeout" } # session を takeout に焼く
+
+    get "/order/status"
+    assert_redirected_to "/order/history"
+  end
+
   test "/order/status の各注文は表示用の order_number と明細を持つ" do
     get "/order", params: { order_type: "in_store", table_number: 5 }
     post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }

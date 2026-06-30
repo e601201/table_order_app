@@ -54,9 +54,11 @@ export const closureReasonsByOrderType: Record<OrderType, ClosureReason[]> = {
   in_store: ['out_of_stock', 'customer_request', 'walkout'],
 }
 
-// 客向けの打ち切り表示（ADR-0010）: 理由を問わず「キャンセル」バッジ1種だけ。
-// 「キャンセル」が嘘をつく唯一のケース（walkout）は In-store 限定で、In-store の客に
-// 履歴 surface は存在しない — 客の目に触れる場所ではこの言葉は常に正直（CONTEXT.md: Closed）。
+// 客向けの打ち切り表示（ADR-0010）: 理由を問わず「キャンセル」バッジ1種だけ。これは Takeout の
+// 注文履歴専用。「キャンセル」が嘘をつく唯一のケース（walkout）は In-store 限定だが、In-store 客の
+// 唯一の surface である注文状況（/order/status）は会計軸を一切描かない — walkout は調理軸 served の
+// まま「提供済み」と表示され、提供前クローズは中立文言になる。よって「キャンセル」は客の目に触れる
+// 場所では常に正直（根拠は ADR-0012 で「surface が無いから」→「会計軸を描かないから」に改訂。CONTEXT.md: Closed）。
 export const customerClosedBadge: BadgeMeta = badge('キャンセル', '#737373')
 
 // In-store 注文状況（ADR-0012）: 提供前に打ち切られた注文の中立文言。「キャンセル」「打ち切り」
