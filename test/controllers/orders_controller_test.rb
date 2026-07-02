@@ -409,6 +409,117 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, row[:items].first[:quantity]
   end
 
+  # --- 来店境界: 会計は来店を終える（ADR-0013 / イシュー #55） ---
+
+  test "全注文が会計済みになると注文状況は空になる（会計は来店を終える。ADR-0013）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    order = Order.last
+
+    # レジが会計を終える（Settlement）→ この来店の全注文が payment 終端かつ ≥1 Paid
+    order.update!(status: :served, paid_at: Time.current)
+
+    get "/order/status"
+    assert_empty inertia.props[:orders]
+  end
+
+  test "打ち切りだけでは来店は終わらない（「ご用意できませんでした」は消えない。ADR-0013）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    order = Order.last
+
+    # 唯一の注文が品切れで打ち切られた — 客はまだ席にいて代替注文をするはず。
+    # 全終端だが Paid が1件もない → 来店は終わらず、中立文言の行は残り続ける。
+    order.update!(closed_at: Time.current, closure_reason: :out_of_stock)
+
+    get "/order/status"
+    rows = inertia.props[:orders]
+    assert_equal [ order.id ], rows.map { |o| o[:id] }
+    assert rows.first[:unavailable]
+  end
+
+  test "未会計の注文が1件でも残る間は来店は終わらない（部分会計では消えない）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    2.times do
+      post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+      post "/order/checkout"
+    end
+    settled, still_eating = Order.order(:id).last(2)
+    settled.update!(status: :served, paid_at: Time.current)
+
+    get "/order/status"
+    assert_equal [ settled.id, still_eating.id ], inertia.props[:orders].map { |o| o[:id] }
+  end
+
+  test "Paid と Closed の混在でも全終端なら来店は終わる（何かしら払って退店）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    2.times do
+      post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+      post "/order/checkout"
+    end
+    settled, withdrawn = Order.order(:id).last(2)
+    settled.update!(status: :served, paid_at: Time.current)
+    withdrawn.update!(closed_at: Time.current, closure_reason: :customer_request)
+
+    get "/order/status"
+    assert_empty inertia.props[:orders]
+  end
+
+  test "会計終端で前客のカート残骸も消え、table_number は残る（次客は Welcome 不要。ADR-0013）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    # 前客がカートに入れたまま Checkout しなかった残骸（幽霊注文の種）
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
+    Order.last.update!(status: :served, paid_at: Time.current)
+
+    # 次客が Welcome を経由せずメニューを開く — カートは空、テーブルはそのまま使える
+    get "/order"
+    assert_response :success
+    assert_equal 5, inertia.props[:table_number]
+    assert_equal 0, inertia.props[:cart_count]
+
+    get "/order/status"
+    assert_empty inertia.props[:orders]
+  end
+
+  test "会計終端後はカート画面を直接開いても残骸は見えない（幽霊 Checkout の遮断）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
+    Order.last.update!(status: :served, paid_at: Time.current)
+
+    # タブレットがカート画面に置き去り → 次客が home を経ずに直接カートを開く
+    get "/order/cart"
+    assert_empty inertia.props[:cart_items]
+  end
+
+  test "session に残る昨日の未終端注文は当日刈り込みで落ち、来店境界を塞がない（ADR-0013）" do
+    get "/order", params: { order_type: "in_store", table_number: 5 }
+
+    # 昨日の注文が未終端のまま滞留（walkout 未処理など）。id は session に残る
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    travel_to 1.day.ago do
+      post "/order/checkout"
+    end
+
+    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
+    post "/order/checkout"
+    today = Order.last
+
+    # status の読み出しが session の id 配列を当日分へ刈り込む（表示フィルタと同じ母集合）
+    get "/order/status"
+    assert_equal [ today.id ], inertia.props[:orders].map { |o| o[:id] }
+
+    # 本日分が全て会計されれば、昨日の未終端 id が邪魔をせず来店は終わる
+    today.update!(status: :served, paid_at: Time.current)
+    get "/order/status"
+    assert_empty inertia.props[:orders]
+  end
+
   private
 
   # takeout モードでログイン済みのカートを用意する（checkout 系テストの前段）

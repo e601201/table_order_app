@@ -34,7 +34,7 @@ status: accepted
 - **`usePoll` 部分リロード（採用）** — 既存規約（kitchen `usePoll(7000)` / cashier `setInterval` ＋ `router.reload`）に従う。`config/cable.yml` はあるが `app/channels/` は空で Action Cable は未導入。「通知 = イベント伝播、transport は実装選択」（CONTEXT.md: 通知）とも整合。
 
 ## Consequences
-- `session[:placed_order_ids]`（配列）を追加。Checkout（`in_store` のみ）で `order.id` を append、welcome 入口で `clear_cart` と同時にクリア。
+- `session[:placed_order_ids]`（配列）を追加。Checkout（`in_store` のみ）で `order.id` を append。**当初のリセット経路「welcome 入口で `clear_cart` と同時にクリア」の1本のみは ADR-0013 で改訂** — 会計終端（全 `Order` が payment 終端 かつ ≥1 `Paid`）が第2の来店境界として加わり（`Cart` も同時クリア）、`注文状況` 読み出し時の当日刈り込みも行う（イシュー #55）。
 - ルートは `GET /order/status`（`:id` を取らない）。session の id 群を読み、`in_store` ＋本日でフィルタ。URL からの列挙は不可。
 - **新 canonical 用語 `注文状況`**（CONTEXT.md）と、対の `注文履歴`（従来 Takeout 限定だが未定義だったものを明文化）。
 - **ADR-0010 の客向け表示 Consequence（「キャンセル」バッジの正直さの根拠）を改訂**: walkout の「キャンセル」が嘘にならない根拠を「In-store に履歴 surface が無い」→「In-store の唯一の surface（`注文状況`）が会計軸を描かず、提供前クローズを中立文言で表す」に載せ替え。ADR-0010 自体は accepted のまま（状態機械は不変）、本 ADR が理由を上書きする。`orderStatus.ts` の `customerClosedBadge` 直上のコメントも同根拠に更新。
@@ -46,3 +46,4 @@ status: accepted
 - ADR-0006（注文完了に調理時間を出さない）/ ADR-0007（Checkout で Order を永続・完了画面は再表示可）/ ADR-0008（Takeout の LINE identity・注文履歴）/ ADR-0010（打ち切り・walkout の「キャンセル」表示根拠 ← 本 ADR が改訂）
 - CONTEXT.md: `注文状況` / `注文履歴` / `Closed` / `Served` / `Customer` / `Table number` / 通知
 - イシュー #29（in_store の `:id` 列挙負債）
+- ADR-0013（来店境界の二本立て — 本 ADR のリセット経路 Consequence を改訂。イシュー #55）

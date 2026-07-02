@@ -79,7 +79,7 @@ _Avoid_: 入荷 (acceptable casual alias), refill, replenish as a separate event
 ### Order
 
 **Cart**:
-The collection of `Line`s a customer is assembling but has not yet placed. Lives only on the customer's tablet session — never persisted to the database, never visible to the kitchen, never the target of any `Order*` event. A `Cart` becomes an `Order` exactly at `Checkout`, when `OrderPlaced` is raised. Until that moment, nothing the customer does has consequences outside their own screen.
+The collection of `Line`s a customer is assembling but has not yet placed. Lives only on the customer's tablet session — never persisted to the database, never visible to the kitchen, never the target of any `Order*` event. A `Cart` becomes an `Order` exactly at `Checkout`, when `OrderPlaced` is raised. Until that moment, nothing the customer does has consequences outside their own screen. For an `In-store` `Customer` the `Cart` is scoped to the current `来店` (Visit) and does not survive the visit's end (ADR-0013).
 _Avoid_: Draft order, pending order (clashes with the lifecycle state `Pending`), basket
 
 **Line**:
@@ -102,8 +102,12 @@ _Avoid_: Dine-in / dine-out (acceptable as UI copy aliases only; canonical names
 In-store な `Order` の所在を示す正の整数ラベル。`Table` という独立エンティティも、「有効なテーブルの母集合（1..N）」も存在しない — `Order` に焼き込まれる自由なラベルにすぎない。`In-store` の `Order` は必ず持ち（正の整数）、`Takeout` は持たない（所在の代わりに `LineAccount`）。デモのウェルカム入口でオペレーターが任意に指定する自由ラベルであり、席・卓の在庫管理や着席ワークフローを表すものではない。
 _Avoid_: Table / テーブル（席や卓を表す独立モデルは存在しない）, seat, 卓番号 as an entity, テーブルの母集合 / 有効テーブル一覧（存在しない）
 
+**来店** (canonical Japanese: **来店**, English: **Visit**):
+1組の客がテーブルに着いてから会計を終えるまでの占有期間。`In-store` の `Customer` は identity を持たないため（see `Customer` / `LineAccount`）、「この `Cart` とこれらの `Order` は同じ客のもの」と言える唯一の器が来店である。`Cart` と `注文状況` はどちらも現在の来店にスコープされ、来店が終われば意味を失う。来店の終わり方は2つ。第1に**会計が来店を終える**: その来店で出た全 `Order` が payment 軸の終端に達し、かつ少なくとも1件が `Paid` になったとき（ADR-0013）。**`打ち切り` 単独では終わらない** — 全注文が `Closed` でも客はまだ席にいる（`out_of_stock` の打ち切りは代替注文の前触れであって退店ではない）。第2は運用上の宣言: Welcome 入口の再通過は「新しい来店の開始」を意味し、進行中の来店を終わらせる（イシュー #41）。`Takeout` に来店は無い — `LineAccount` が来店を跨ぐ identity を提供する（see `注文履歴`）。
+_Avoid_: セッション / 着席セッション（cookie session は来店を**近似する実装手段**であって概念そのものではない — 来店境界の問題を保存先の問題と混同する温床）、チェックイン / チェックアウト（ホテル用語）、Visit / 滞在 as a separate entity（`Table` 同様、独立エンティティは存在しない — ADR-0013）
+
 **注文状況** (canonical Japanese: **注文状況**, Order status):
-The `In-store` `Customer`'s in-visit view of the live kitchen progress of the `Order`s placed from this tablet. Bound to the tablet **`session`** (never a `LineAccount`, never a guessable `:id` URL), scoped to the current visit and the business day, and **`In-store` only**. Shows the kitchen-progress axis alone (受付 / 調理中 / 提供待ち / 提供済み) — never the payment axis, and never an ETA / 分数 (ADR-0006). A `Closed` order is given no payment badge here: one frozen at `Served` keeps showing 提供済み (a `walkout` lands here, so 「キャンセル」 never appears), one frozen before `Served` shows a neutral "ご用意できませんでした" message (`out_of_stock` / early `customer_request` land here). The mirror of the Takeout `注文履歴`, deliberately a different concept (ADR-0012).
+The `In-store` `Customer`'s in-visit view of the live kitchen progress of the `Order`s placed from this tablet. Bound to the tablet **`session`** (never a `LineAccount`, never a guessable `:id` URL), scoped to the current `来店` (Visit) and the business day, and **`In-store` only**. Shows the kitchen-progress axis alone (受付 / 調理中 / 提供待ち / 提供済み) — never the payment axis, and never an ETA / 分数 (ADR-0006). A `Closed` order is given no payment badge here: one frozen at `Served` keeps showing 提供済み (a `walkout` lands here, so 「キャンセル」 never appears), one frozen before `Served` shows a neutral "ご用意できませんでした" message (`out_of_stock` / early `customer_request` land here). The mirror of the Takeout `注文履歴`, deliberately a different concept (ADR-0012).
 _Avoid_: 注文履歴 / History (that is the Takeout, `LineAccount`-bound, cross-visit, authenticated surface — `注文状況` is the `In-store`, `session`-bound, in-visit, unauthenticated one), キャンセル / 打ち切り badge on this surface (the payment axis is never drawn here), order tracking 以外の第3表記
 
 **注文履歴** (canonical Japanese: **注文履歴**, Order history):
