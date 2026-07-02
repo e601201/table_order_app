@@ -11,6 +11,11 @@ class OrdersController < ApplicationController
   # NOTE: 同名メソッドの before_action は二重登録すると後勝ちで上書きされるため、1つに束ねる。
   before_action :require_line_login!, if: -> { order_type == "takeout" || action_name == "history" }
 
+  # 来店境界の第2本: 会計は来店を終える（ADR-0013）。タブレットがどのページに置き去りでも
+  # 次客の最初のリクエストで前の来店を畳めるよう、客 surface の全アクションで評価する
+  # （in_store 以外と placed-order なしは早期 return で無風）。
+  before_action :end_settled_visit
+
   def home
     # In-store はテーブル番号が確定していなければ入口へ戻す（デモ入口で必須。イシュー #41）。
     # table_number は正の整数だけを session に焼くため、ここで nil なら未確定。
@@ -149,6 +154,10 @@ class OrdersController < ApplicationController
     # 本日（JST 暦日）の自 session の in_store 注文だけ。session に id が残っていても
     # 日付をまたいだ注文は当日の状況一覧から落ちる。ラウンド順（古い順）に固定。
     orders = Order.in_store.where(id: ids).placed_today.includes(:order_items).order(:placed_at, :id)
+    # 当日刈り込み（ADR-0013）: 表示と同じ母集合へ session の id 配列も書き戻す。昨日の
+    # 未終端注文（walkout 未処理など）が CookieOverflow の種になったり、全終端判定を
+    # 永遠に塞いで来店境界（end_settled_visit）を無効化したりしないための刈り込み。
+    session[:placed_order_ids] = orders.map(&:id) if ids.any?
     render inertia: "orders/Status", props: {
       table_number: table_number,
       orders: orders.map { |order| serialize_status_order(order) }
@@ -167,6 +176,27 @@ class OrdersController < ApplicationController
   end
 
   private
+
+  # 会計は来店を終える（ADR-0013）: この session の placed orders が全て payment 終端に
+  # 達し、かつ1件でも Paid なら、来店は会計で終わっている — placed_order_ids を捨てて
+  # 次の来店に備える。打ち切りだけでは終えない: 全注文が Closed でも客はまだ席にいる
+  # （out_of_stock の打ち切りは代替注文の前触れ）— この条件を「全終端」に単純化すると
+  # 「ご用意できませんでした」が次のポーリングで無言で消える。
+  def end_settled_visit
+    return unless order_type == "in_store"
+
+    ids = Array(session[:placed_order_ids])
+    return if ids.empty?
+
+    terminals = Order.where(id: ids).pluck(:paid_at, :closed_at)
+    return if terminals.any? { |paid_at, closed_at| paid_at.nil? && closed_at.nil? } # 未終端が残っている
+    return if terminals.none? { |paid_at, _| paid_at }                              # 打ち切りのみでは終えない
+
+    # Cart も来店スコープ（幽霊 Checkout の種を残さない）。table_number はタブレットの
+    # 物理位置なので消さない — 消すと次客が Welcome 送りになり、この境界の意味が消える。
+    session.delete(:placed_order_ids)
+    clear_cart
+  end
 
   # 在庫不足を全ロールバックさせる checkout 内シグナル（ADR-0011）。不足明細を運ぶ。
   class InsufficientStock < StandardError
