@@ -125,6 +125,9 @@ GET    /admin/dashboard               → admin/dashboard#index
 ### データベース
 PostgreSQL with Active Record models. `Order` / `OrderItem`（注文と明細、二軸状態 = `status` enum ＋ `paid_at`）、`MenuItem`（DB化メニュー、画像は Active Storage。ADR-0004）、`Staff`（認証アカウント）。`Cart` はセッションのみで永続化されず、Checkout で `Order` / `OrderItem` に永続化される。キッチン／レジ／Admin は実 `Order` 行を読む。ドメインモデルの詳細は `CONTEXT.md` と `docs/adr/` を参照。
 
+### サーフェスごとの並行 read model（意図的な重複）
+注文状況／注文履歴／キッチン／レジ／Admin の各サーフェスは、同じ `Order` を映す**独立した read model**。TypeScript 型（`StatusOrder` / `HistoryOrder` / `KitchenOrder` / `CashierOrder` / `AdminOrderRow`）とコントローラのシリアライザ（`serialize_status_order` 等）はサーフェスごとに並行定義し、**共有 base を導入しない**。「何を送らないか」がサーフェスの意味そのもの（例: 注文状況は会計軸キーを一切含めない — ADR-0012）であり、この分離は物理的に別のシリアライザ・型であることで担保されているため。コードレビューでこの並行定義を DRY 違反として指摘しない（イシュー #56 の決定）。共有してよいのはドメインと無関係な配管のみ — `@/lib` のユーティリティ、テストヘルパー、客向けページの見た目の枠。
+
 ## Agent skills
 
 ### Issue tracker
