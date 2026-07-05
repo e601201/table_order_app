@@ -260,10 +260,7 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   # --- 注文状況（In-store・session 紐付け・調理軸のみ。ADR-0012） ---
 
   test "in_store の checkout 後 /order/status はその注文を出す" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
-    order = Order.last
+    order = place_in_store_order
 
     get "/order/status"
     assert_response :success
@@ -315,12 +312,8 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "/order/status は提供前クローズを unavailable に畳み、walkout は提供済みのまま出す" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-
     # 提供前クローズ（品切れ）: pending のまま打ち切り → unavailable
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
-    out_of_stock = Order.last
+    out_of_stock = place_in_store_order
     out_of_stock.update!(closed_at: Time.current, closure_reason: :out_of_stock)
 
     # walkout: 提供済み + 打ち切り → 調理軸は served のまま、unavailable ではない
@@ -338,11 +331,9 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "/order/status の行は会計軸キーを一切含まない（CONTEXT.md / ADR-0012 の不変条件）" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
+    order = place_in_store_order
     # walkout に打ち切っても、客向けには会計軸（Closed / 理由）を一切出さない
-    Order.last.update!(status: :served, closed_at: Time.current, closure_reason: :walkout)
+    order.update!(status: :served, closed_at: Time.current, closure_reason: :walkout)
 
     get "/order/status"
     row = inertia.props[:orders].first
@@ -395,10 +386,7 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "/order/status の各注文は表示用の order_number と明細を持つ" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
-    post "/order/checkout"
-    order = Order.last
+    order = place_in_store_order(quantity: 2)
 
     get "/order/status"
     row = inertia.props[:orders].first
@@ -412,10 +400,7 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   # --- 来店境界: 会計は来店を終える（ADR-0013 / イシュー #55） ---
 
   test "全注文が会計済みになると注文状況は空になる（会計は来店を終える。ADR-0013）" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
-    order = Order.last
+    order = place_in_store_order
 
     # レジが会計を終える（Settlement）→ この来店の全注文が payment 終端かつ ≥1 Paid
     order.update!(status: :served, paid_at: Time.current)
@@ -425,10 +410,7 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "打ち切りだけでは来店は終わらない（「ご用意できませんでした」は消えない。ADR-0013）" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
-    order = Order.last
+    order = place_in_store_order
 
     # 唯一の注文が品切れで打ち切られた — 客はまだ席にいて代替注文をするはず。
     # 全終端だが Paid が1件もない → 来店は終わらず、中立文言の行は残り続ける。
@@ -468,12 +450,10 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "会計終端で前客のカート残骸も消え、table_number は残る（次客は Welcome 不要。ADR-0013）" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
+    order = place_in_store_order
     # 前客がカートに入れたまま Checkout しなかった残骸（幽霊注文の種）
     post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
-    Order.last.update!(status: :served, paid_at: Time.current)
+    order.update!(status: :served, paid_at: Time.current)
 
     # 次客が Welcome を経由せずメニューを開く — カートは空、テーブルはそのまま使える
     get "/order"
@@ -486,11 +466,9 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "会計終端後はカート画面を直接開いても残骸は見えない（幽霊 Checkout の遮断）" do
-    get "/order", params: { order_type: "in_store", table_number: 5 }
-    post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 1 }
-    post "/order/checkout"
+    order = place_in_store_order
     post "/order/cart", params: { item_id: @item.id, size_id: "regular", addon_ids: [], quantity: 2 }
-    Order.last.update!(status: :served, paid_at: Time.current)
+    order.update!(status: :served, paid_at: Time.current)
 
     # タブレットがカート画面に置き去り → 次客が home を経ずに直接カートを開く
     get "/order/cart"
@@ -521,6 +499,14 @@ class OrdersControllerTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  # in_store の入店 → カート追加 → checkout をまとめ、作成された Order を返す
+  def place_in_store_order(table_number: 5, item: @item, quantity: 1)
+    get "/order", params: { order_type: "in_store", table_number: table_number }
+    post "/order/cart", params: { item_id: item.id, size_id: "regular", addon_ids: [], quantity: quantity }
+    post "/order/checkout"
+    Order.last
+  end
 
   # takeout モードでログイン済みのカートを用意する（checkout 系テストの前段）
   def takeout_cart_for(account)
