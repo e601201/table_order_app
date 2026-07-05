@@ -1,20 +1,12 @@
 import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft, ShoppingBag } from 'lucide-react'
 import { customerClosedBadge, takeoutCustomerStatusMeta } from '@/lib/orderStatus'
+import { formatMonthDayTimeJST } from '@/lib/time'
 import type { HistoryOrder } from '@/types'
 
 interface HistoryProps {
   display_name: string | null
   orders: HistoryOrder[]
-}
-
-function formatPlacedAt(iso: string): string {
-  return new Date(iso).toLocaleString('ja-JP', {
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 // 注文履歴（ADR-0008）: 現在進行中＋過去を兼ねる本人限定の一覧。
@@ -72,7 +64,7 @@ export default function History({ display_name, orders }: HistoryProps) {
                     <span className="text-base font-extrabold text-[#E53935] tracking-[-0.5px]">
                       #{order.order_number}
                     </span>
-                    <span className="text-xs text-[#9E8E7E]">{formatPlacedAt(order.placed_at)}</span>
+                    <span className="text-xs text-[#9E8E7E]">{formatMonthDayTimeJST(order.placed_at)}</span>
                   </div>
                   <span
                     className="px-2.5 py-1 rounded-full text-xs font-bold"

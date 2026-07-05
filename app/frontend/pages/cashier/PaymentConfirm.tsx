@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
 import { ChefHat, ArrowLeft, CheckCircle, Banknote, CreditCard, X } from 'lucide-react'
+import { formatTimeJST } from '@/lib/time'
 import type { CashierOrder, CashierOrderItem, PaymentMethod } from '@/types'
 
 // --- サブコンポーネント ---
@@ -80,8 +81,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  const now = new Date()
-  const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  const timeLabel = formatTimeJST(new Date())
 
   const handleConfirm = () => {
     if (submitting) return

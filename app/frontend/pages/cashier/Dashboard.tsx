@@ -4,6 +4,7 @@ import { Search, RefreshCw, CreditCard, X, ChefHat, LogOut } from 'lucide-react'
 import StaffSurfaceNav from '@/components/StaffSurfaceNav'
 import FlashMessage from '@/components/FlashMessage'
 import { closureReasonLabel, closureReasonsByOrderType, kitchenStatusMeta } from '@/lib/orderStatus'
+import { formatTimeJST, formatTimeWithSecondsJST } from '@/lib/time'
 import type { CashierOrder, ClosureReason, PaymentStatus } from '@/types'
 
 // --- サブコンポーネント ---
@@ -29,11 +30,6 @@ function StatusBadge({ status }: { status: PaymentStatus }) {
       {style.label}
     </span>
   )
-}
-
-function formatTime(iso: string): string {
-  const date = new Date(iso)
-  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
 }
 
 function OrderTable({
@@ -87,7 +83,7 @@ function OrderTable({
               ¥{order.total.toLocaleString()}
             </td>
             <td className="px-4 py-3" style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>
-              {formatTime(order.placed_at)}
+              {formatTimeWithSecondsJST(order.placed_at)}
             </td>
             <td className="px-4 py-3">
               <StatusBadge status={order.payment_status} />
@@ -154,7 +150,7 @@ function OrderSummary({
           🪑 {order.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${order.table_number}`}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
-          🕐 {formatTime(order.placed_at)}
+          🕐 {formatTimeWithSecondsJST(order.placed_at)}
         </span>
         <span className="flex items-center gap-1" style={{ fontSize: 12, fontWeight: 500, color: '#737373' }}>
           📦 {order.items.length} 点
@@ -444,8 +440,7 @@ export default function CashierDashboard({
     [...orders, ...outsideQueueOrders, ...closedOrders].find((o) => o.id === selectedOrderId) ?? null
   const unpaidCount = orders.filter((o) => o.payment_status === 'unpaid').length
 
-  const now = new Date()
-  const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  const timeLabel = formatTimeJST(new Date())
 
   return (
     <>

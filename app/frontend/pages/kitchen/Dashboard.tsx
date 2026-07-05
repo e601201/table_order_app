@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ChefHat, LayoutList, CircleCheck, Clock, Flame, Check, Bell, LogOut } from 'lucide-react'
 import FlashMessage from '@/components/FlashMessage'
 import StaffSurfaceNav from '@/components/StaffSurfaceNav'
+import { formatTimeJST } from '@/lib/time'
 import type { KitchenOrder, KitchenOrderStatus, OrdersByStatus } from '@/types'
 
 // --- ステータス設定 ---
@@ -19,15 +20,6 @@ const nextStatus: Record<KitchenOrderStatus, KitchenOrderStatus | null> = {
   in_progress: 'ready',
   ready: 'served',
   served: null,
-}
-
-// --- フォーマッタ ---
-
-function formatPlacedAt(iso: string): string {
-  const d = new Date(iso)
-  const hh = d.getHours().toString().padStart(2, '0')
-  const mm = d.getMinutes().toString().padStart(2, '0')
-  return `${hh}:${mm}`
 }
 
 // --- サブコンポーネント ---
@@ -152,7 +144,7 @@ function OrderCard({
           <div className="flex items-center gap-1">
             <Clock size={12} color="#737373" />
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: 600, color: '#737373' }}>
-              {formatPlacedAt(order.placed_at)}
+              {formatTimeJST(order.placed_at)}
             </span>
           </div>
         </div>
@@ -302,8 +294,7 @@ export default function KitchenDashboard({ ordersByStatus }: { ordersByStatus: O
     return activeFilter === status ? ordersByStatus[status] : []
   }
 
-  const now = new Date()
-  const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  const timeLabel = formatTimeJST(new Date())
 
   const visibleSections: KitchenOrderStatus[] = ['pending', 'in_progress', 'ready', 'served']
   const hasAny = visibleSections.some((s) => sectionOrders(s).length > 0)

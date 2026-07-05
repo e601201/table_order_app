@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react'
 import { ChefHat, ArrowLeft, Check, ArrowRight, LayoutDashboard } from 'lucide-react'
+import { formatDateTimeJST, formatTimeJST } from '@/lib/time'
 import type { CashierOrder } from '@/types'
 
 // --- サブコンポーネント ---
@@ -28,15 +29,7 @@ function DetailRow({
 }
 
 function formatPaidAt(iso: string | null): string {
-  if (!iso) return '—'
-  const date = new Date(iso)
-  return date.toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return iso ? formatDateTimeJST(iso) : '—'
 }
 
 function paymentMethodLabel(method: string | null): string {
@@ -48,8 +41,7 @@ function paymentMethodLabel(method: string | null): string {
 // --- メインコンポーネント ---
 
 export default function PaymentComplete({ payment }: { payment: CashierOrder }) {
-  const now = new Date()
-  const timeLabel = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  const timeLabel = formatTimeJST(new Date())
 
   return (
     <>

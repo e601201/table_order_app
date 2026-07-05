@@ -2,18 +2,12 @@ import { Head, Link, usePoll } from '@inertiajs/react'
 import { useEffect } from 'react'
 import { ArrowLeft, CookingPot } from 'lucide-react'
 import { inStoreOrderStatusMeta } from '@/lib/orderStatus'
+import { formatTimeJST } from '@/lib/time'
 import type { StatusOrder } from '@/types'
 
 interface StatusProps {
   table_number: number | null
   orders: StatusOrder[]
-}
-
-function formatPlacedAt(iso: string): string {
-  return new Date(iso).toLocaleString('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 // 注文状況（ADR-0012）: In-store の客が、この session で出した当日の注文の調理進捗を
@@ -84,7 +78,7 @@ export default function Status({ table_number, orders }: StatusProps) {
                     <span className="text-base font-extrabold text-[#E53935] tracking-[-0.5px]">
                       #{order.order_number}
                     </span>
-                    <span className="text-xs text-[#9E8E7E]">{formatPlacedAt(order.placed_at)}</span>
+                    <span className="text-xs text-[#9E8E7E]">{formatTimeJST(order.placed_at)}</span>
                   </div>
                   <span
                     className="px-2.5 py-1 rounded-full text-xs font-bold"

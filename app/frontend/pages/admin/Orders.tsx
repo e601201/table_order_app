@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
 import { type KitchenFilter, type OrderTypeFilter, type PaymentFilter, filterOrders } from '@/lib/orderFilters'
 import { closureReasonLabel, kitchenStatusMeta, kitchenStatusOrder, paymentStatusMeta } from '@/lib/orderStatus'
+import { formatTimeJST } from '@/lib/time'
 import type { AdminOrderRow, AdminOrderStats } from '@/types'
 
 interface OrdersProps {
@@ -31,11 +32,6 @@ const orderTypeTabs: { key: OrderTypeFilter; label: string }[] = [
   { key: 'in_store', label: '店内' },
   { key: 'takeout', label: 'テイクアウト' },
 ]
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
-}
 
 function yen(n: number): string {
   return `¥${n.toLocaleString()}`
@@ -260,7 +256,7 @@ export default function Orders({ orders, stats }: OrdersProps) {
                   </div>
 
                   <span style={{ width: 80, fontSize: 13, fontWeight: 500, color: adminColors.textSecondary }}>
-                    {formatTime(order.placed_at)}
+                    {formatTimeJST(order.placed_at)}
                   </span>
 
                   <div className="flex items-center justify-end" style={{ width: 80 }}>

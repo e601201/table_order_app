@@ -3,6 +3,7 @@ import { Wallet, ShoppingBag, Receipt, TrendingUp, TrendingDown, ArrowRight } fr
 import type { LucideIcon } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
 import { kitchenStatusMeta, paymentStatusMeta } from '@/lib/orderStatus'
+import { formatTimeJST } from '@/lib/time'
 import type { AdminDashboardData, AdminOrderRow, DashboardSalesTrendPoint, DashboardPopularItem } from '@/types'
 
 // 遅延ロード中のスケルトン背景（カード白地より一段暗いニュートラルグレー）。
@@ -13,11 +14,6 @@ const SKELETON_BG = '#ececec'
 
 function yen(value: number): string {
   return `¥${value.toLocaleString()}`
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
 function orderTypeLabel(order: AdminOrderRow): string {
@@ -235,7 +231,7 @@ function RecentOrders({ orders }: { orders: AdminOrderRow[] }) {
             <span
               style={{ width: 56, textAlign: 'right', fontSize: 13, fontWeight: 500, color: adminColors.textSecondary }}
             >
-              {formatTime(order.placed_at)}
+              {formatTimeJST(order.placed_at)}
             </span>
           </div>
         )

@@ -2,15 +2,11 @@ import { Head, Link } from '@inertiajs/react'
 import { ArrowLeft } from 'lucide-react'
 import AdminLayout, { adminColors } from '@/components/AdminLayout'
 import { closureReasonLabel, kitchenStatusMeta, paymentStatusMeta } from '@/lib/orderStatus'
+import { formatTimeJST } from '@/lib/time'
 import type { AdminOrderDetail } from '@/types'
 
 interface OrderDetailProps {
   order: AdminOrderDetail
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso)
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
 function yen(n: number): string {
@@ -158,12 +154,12 @@ export default function OrderDetail({ order }: OrderDetailProps) {
               <Badge label={p.label} color={p.color} bg={p.bg} />
             </MetaRow>
             <MetaRow label="種別">{orderTypeLabel}</MetaRow>
-            <MetaRow label="受注時刻">{formatTime(order.placed_at)}</MetaRow>
+            <MetaRow label="受注時刻">{formatTimeJST(order.placed_at)}</MetaRow>
             <MetaRow label="点数">{order.item_count} 点</MetaRow>
             {order.payment_method && (
               <MetaRow label="支払い方法">{paymentMethodLabel[order.payment_method] ?? order.payment_method}</MetaRow>
             )}
-            {order.paid_at && <MetaRow label="会計時刻">{formatTime(order.paid_at)}</MetaRow>}
+            {order.paid_at && <MetaRow label="会計時刻">{formatTimeJST(order.paid_at)}</MetaRow>}
             {/* 打ち切り理由（閲覧専用の表示のみ。ADR-0010） */}
             {order.closure_reason && (
               <MetaRow label="打ち切り理由">{closureReasonLabel[order.closure_reason]}</MetaRow>
