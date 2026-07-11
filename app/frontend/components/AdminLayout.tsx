@@ -26,13 +26,14 @@ const navSections: { title: string; items: NavItem[] }[] = [
       { key: 'orders', label: '注文管理', icon: ShoppingBag, enabled: true, href: '/admin/orders' },
       { key: 'menu', label: 'メニュー管理', icon: Utensils, enabled: true, href: '/admin/menu_items' },
       { key: 'staffs', label: 'スタッフ管理', icon: Users, enabled: true, href: '/admin/staffs' },
+      // 設定（ADR-0014）: 決済方法マスタ。分析ではなく運営のパラメータなのでこのセクション。
+      { key: 'settings', label: '設定', icon: Settings, enabled: true, href: '/admin/settings' },
     ],
   },
   {
     title: '分析',
     items: [
       { key: 'reports', label: '売上レポート', icon: TrendingUp, enabled: false },
-      { key: 'settings', label: '設定', icon: Settings, enabled: false },
     ],
   },
 ]
