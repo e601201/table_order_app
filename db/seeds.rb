@@ -21,6 +21,12 @@ if Staff.where(role: :admin).none?
   puts "初回 Admin を作成しました (login_id: admin)"
 end
 
+# 決済方法マスタのシード（ADR-0014）。orders.payment_method は会計時の名前スナップショット。
+[ "現金", "クレジットカード" ].each do |name|
+  PaymentMethod.find_or_create_by!(name: name)
+end
+puts "決済方法を #{PaymentMethod.count} 件シードしました"
+
 # Menu のシード（ADR-0004）。
 # 既存の id 1〜11 を明示指定し、進行中カート（item_id）・過去の order_items.menu_item_id
 # （由来メモ）の参照を真実のまま保つ。同梱画像（db/seeds/images/）を attach する。
@@ -136,7 +142,7 @@ if Rails.env.development?
       total: subtotal + tax,
       placed_at: placed_at,
       paid_at: paid_at,
-      payment_method: paid_at ? "cash" : nil,
+      payment_method: paid_at ? "現金" : nil, # 名前スナップショット（ADR-0014）
       closed_at: closed_at,
       closure_reason: closure_reason
     )

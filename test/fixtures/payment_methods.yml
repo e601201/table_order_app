@@ -1,0 +1,12 @@
+# 決済方法マスタ（ADR-0014）。有効2件＋無効1件で不変条件と拒否経路の両方をテストできる。
+cash:
+  name: 現金
+  enabled: true
+
+credit_card:
+  name: クレジットカード
+  enabled: true
+
+paypay:
+  name: PayPay
+  enabled: false
