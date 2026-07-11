@@ -195,7 +195,13 @@ export type PaymentStatus = 'unpaid' | 'paid' | 'closed'
 // 打ち切り理由（ADR-0010）。4値固定: no_show=Takeout 限定 / walkout=In-store 限定。
 export type ClosureReason = 'no_show' | 'out_of_stock' | 'customer_request' | 'walkout'
 
-export type PaymentMethod = 'cash' | 'credit_card'
+// 決済方法マスタの1行（ADR-0014）。Admin が設定ページでインライン管理する。
+// Order 側の payment_method は会計時の名前スナップショット（string）であり、この型を参照しない。
+export type AdminPaymentMethod = {
+  id: number
+  name: string
+  enabled: boolean
+}
 
 export type CashierOrderItem = {
   id: number
@@ -221,7 +227,8 @@ export type CashierOrder = {
   subtotal: number
   tax: number
   total: number
-  payment_method: PaymentMethod | null
+  // 会計時にスナップショットされた決済方法の名前（ADR-0014）。未会計は null。
+  payment_method: string | null
   items: CashierOrderItem[]
 }
 
@@ -245,7 +252,8 @@ export type AdminOrderDetail = AdminOrderRow & {
   subtotal: number
   tax: number
   paid_at: string | null
-  payment_method: PaymentMethod | null
+  // 会計時にスナップショットされた決済方法の名前（ADR-0014）。未会計は null。
+  payment_method: string | null
   items: CashierOrderItem[]
 }
 

@@ -37,7 +37,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     login_as(:cashier_staff)
     order = create_order(status: :served, paid: false)
 
-    post cashier_payment_path(order), params: { payment_method: "cash" }
+    post cashier_payment_path(order), params: { payment_method: "現金" }
     assert_redirected_to cashier_payment_complete_path(order)
     assert order.reload.paid?
   end
@@ -46,7 +46,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     login_as(:cashier_staff)
     order = create_order(status: :ready, paid: false)
 
-    post cashier_payment_path(order), params: { payment_method: "cash" }
+    post cashier_payment_path(order), params: { payment_method: "現金" }
     assert_redirected_to cashier_path
     assert_not order.reload.paid?
   end
@@ -67,7 +67,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     login_as(:cashier_staff)
     order = create_order(status: :ready, paid: false, order_type: :takeout)
 
-    post cashier_payment_path(order), params: { payment_method: "cash" }
+    post cashier_payment_path(order), params: { payment_method: "現金" }
     assert_redirected_to cashier_payment_complete_path(order)
 
     order.reload
@@ -79,7 +79,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     login_as(:cashier_staff)
     order = create_order(status: :in_progress, paid: false, order_type: :takeout)
 
-    post cashier_payment_path(order), params: { payment_method: "cash" }
+    post cashier_payment_path(order), params: { payment_method: "現金" }
     assert_redirected_to cashier_path
     assert_not order.reload.paid?
   end
@@ -98,7 +98,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
 
     called = false
     LineServiceMessenger.stub(:send_ready_message, ->(*_args) { called = true }) do
-      post cashier_payment_path(order), params: { payment_method: "cash" }
+      post cashier_payment_path(order), params: { payment_method: "現金" }
     end
 
     assert_not called
@@ -176,7 +176,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     get cashier_payment_path(order)
     assert_redirected_to cashier_path
 
-    post cashier_payment_path(order), params: { payment_method: "cash" }
+    post cashier_payment_path(order), params: { payment_method: "現金" }
     assert_redirected_to cashier_path
     assert_not order.reload.paid?
   end
@@ -187,7 +187,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     order.update!(closed_at: Time.zone.now, closure_reason: :no_show)
 
     post cashier_order_reopen_path(order)
-    post cashier_payment_path(order), params: { payment_method: "cash" }
+    post cashier_payment_path(order), params: { payment_method: "現金" }
 
     order.reload
     assert_predicate order, :served?
@@ -231,6 +231,49 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
     assert_equal "no_show", closed.first[:closure_reason]
   end
 
+  # --- 決済方法（ADR-0014）: 有効なマスタの name と照合し、名前をスナップショットする。
+  # 不正値を黙って cash に読み替える旧フォールバックは廃止 — 会計記録に嘘を書かない ---
+
+  test "会計確認画面は有効な決済方法の名前一覧を渡す" do
+    login_as(:cashier_staff)
+    order = create_order(status: :served, paid: false)
+
+    get cashier_payment_path(order)
+    assert_response :success
+    methods = inertia.props[:payment_methods]
+    assert_includes methods, "現金"
+    assert_includes methods, "クレジットカード"
+    assert_not_includes methods, "PayPay" # 無効化された方法は選択肢に出ない
+  end
+
+  test "会計は選んだ決済方法の名前をスナップショットする" do
+    login_as(:cashier_staff)
+    order = create_order(status: :served, paid: false)
+
+    post cashier_payment_path(order), params: { payment_method: "クレジットカード" }
+    assert_redirected_to cashier_payment_complete_path(order)
+    assert_equal "クレジットカード", order.reload.payment_method
+  end
+
+  test "無効化された決済方法での会計は拒否して会計確認へ差し戻す" do
+    login_as(:cashier_staff)
+    order = create_order(status: :served, paid: false)
+
+    post cashier_payment_path(order), params: { payment_method: "PayPay" }
+    assert_redirected_to cashier_payment_path(order)
+    assert_not order.reload.paid?
+  end
+
+  test "マスタに存在しない決済方法での会計も拒否する（読み替えはしない）" do
+    login_as(:cashier_staff)
+    order = create_order(status: :served, paid: false)
+
+    post cashier_payment_path(order), params: { payment_method: "cash" } # 旧スラッグも今や不正値
+    assert_redirected_to cashier_payment_path(order)
+    assert_not order.reload.paid?
+    assert_nil order.payment_method
+  end
+
   private
 
   def login_as(fixture_name)
@@ -251,7 +294,7 @@ class CashierControllerTest < ActionDispatch::IntegrationTest
       total: total,
       placed_at: placed_at,
       paid_at: paid ? placed_at : nil,
-      payment_method: paid ? "cash" : nil
+      payment_method: paid ? "現金" : nil # 名前スナップショット（ADR-0014）
     )
     order.order_items.create!(
       menu_item_id: 1, name: "テスト商品", quantity: 1,

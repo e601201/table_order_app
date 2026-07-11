@@ -19,7 +19,9 @@ class CashierController < ApplicationController
     return redirect_to(cashier_path) unless payable?(order)
 
     render inertia: "cashier/PaymentConfirm", props: {
-      order: serialize_order(order)
+      order: serialize_order(order),
+      # 有効な決済方法の名前一覧（ADR-0014）。選択肢はマスタから動的に描画する。
+      payment_methods: PaymentMethod.enabled.order(:id).pluck(:name)
     }
   end
 
@@ -29,7 +31,14 @@ class CashierController < ApplicationController
     return redirect_to(cashier_payment_complete_path(order)) if order.paid?
     return redirect_to(cashier_path) unless payable?(order)
 
-    attributes = { paid_at: Time.zone.now, payment_method: permitted_payment_method }
+    # 決済方法は有効なマスタの name と照合し、名前をスナップショットする（ADR-0014）。
+    # 画面表示後に Admin が無効化した競合は黙って読み替えず拒否 — 会計記録に嘘を書かない。
+    method_name = params[:payment_method].to_s
+    unless PaymentMethod.enabled.exists?(name: method_name)
+      return redirect_to cashier_payment_path(order), alert: "その決済方法は現在使えません。選び直してください"
+    end
+
+    attributes = { paid_at: Time.zone.now, payment_method: method_name }
     # テイクアウトは会計が手渡しを兼ねる（ADR-0009）。Served + Unpaid の中間状態を
     # 作らないよう、kitchen 軸の Served を同一更新で書く。LINE への追加通知は送らない。
     attributes[:status] = :served if order.takeout?
@@ -83,11 +92,6 @@ class CashierController < ApplicationController
     return false if order.closed?
 
     order.takeout? ? order.ready? : order.served?
-  end
-
-  def permitted_payment_method
-    method = params[:payment_method].to_s
-    %w[cash credit_card].include?(method) ? method : "cash"
   end
 
   # enum 外の値は nil に落とし、closure_reason の presence バリデーションに委ねる

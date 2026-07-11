@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react'
 import { useState } from 'react'
-import { ChefHat, ArrowLeft, CheckCircle, Banknote, CreditCard, X } from 'lucide-react'
+import { ChefHat, ArrowLeft, CheckCircle, Banknote, CreditCard, Wallet, X } from 'lucide-react'
 import { formatTimeJST } from '@/lib/time'
-import type { CashierOrder, CashierOrderItem, PaymentMethod } from '@/types'
+import type { CashierOrder, CashierOrderItem } from '@/types'
 
 // --- サブコンポーネント ---
 
@@ -41,19 +41,24 @@ function OrderedItemRow({ item }: { item: CashierOrderItem }) {
   )
 }
 
+// 決済方法は名前だけのラベル（ADR-0014）。アイコンは見た目の便宜で名前から引き、
+// 未知の名前（Admin が追加した方法）は汎用の Wallet に落とす。
+function methodIcon(name: string): typeof Banknote {
+  if (name === '現金') return Banknote
+  if (name === 'クレジットカード') return CreditCard
+  return Wallet
+}
+
 function PaymentMethodButton({
   method,
-  label,
-  icon: Icon,
   selected,
   onSelect,
 }: {
-  method: PaymentMethod
-  label: string
-  icon: typeof Banknote
+  method: string
   selected: boolean
-  onSelect: (method: PaymentMethod) => void
+  onSelect: (method: string) => void
 }) {
+  const Icon = methodIcon(method)
   return (
     <button
       onClick={() => onSelect(method)}
@@ -69,15 +74,22 @@ function PaymentMethodButton({
       }}
     >
       <Icon size={20} />
-      {label}
+      {method}
     </button>
   )
 }
 
 // --- メインコンポーネント ---
 
-export default function PaymentConfirm({ order }: { order: CashierOrder }) {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+export default function PaymentConfirm({
+  order,
+  payment_methods,
+}: {
+  order: CashierOrder
+  // 有効な決済方法の名前一覧（ADR-0014）。マスタから動的に描画し、デフォルトは先頭。
+  payment_methods: string[]
+}) {
+  const [paymentMethod, setPaymentMethod] = useState<string>(payment_methods[0] ?? '')
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -221,21 +233,15 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
                 <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0a0a0a', fontFamily: 'Outfit, sans-serif', marginBottom: 12 }}>
                   お支払い方法
                 </h3>
-                <div className="flex gap-3">
-                  <PaymentMethodButton
-                    method="cash"
-                    label="現金"
-                    icon={Banknote}
-                    selected={paymentMethod === 'cash'}
-                    onSelect={setPaymentMethod}
-                  />
-                  <PaymentMethodButton
-                    method="credit_card"
-                    label="クレジットカード"
-                    icon={CreditCard}
-                    selected={paymentMethod === 'credit_card'}
-                    onSelect={setPaymentMethod}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  {payment_methods.map((method) => (
+                    <PaymentMethodButton
+                      key={method}
+                      method={method}
+                      selected={paymentMethod === method}
+                      onSelect={setPaymentMethod}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -314,7 +320,7 @@ export default function PaymentConfirm({ order }: { order: CashierOrder }) {
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 13, fontWeight: 500, color: '#737373' }}>お支払い方法</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#0a0a0a' }}>
-                  {paymentMethod === 'cash' ? '現金' : 'クレジットカード'}
+                  {paymentMethod}
                 </span>
               </div>
               <div

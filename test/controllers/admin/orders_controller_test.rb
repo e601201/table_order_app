@@ -171,7 +171,7 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
     assert_equal order.order_number, detail[:order_number]
     assert_equal 2400, detail[:subtotal]
     assert_equal 218, detail[:tax]
-    assert_equal "cash", detail[:payment_method]
+    assert_equal "現金", detail[:payment_method]
     assert_match(/\dT\d/, detail[:paid_at], "paid_at は iso8601 文字列であるべき")
 
     item = detail[:items].first
@@ -221,7 +221,7 @@ class Admin::OrdersControllerTest < ActionDispatch::IntegrationTest
       total: total,
       placed_at: placed_at,
       paid_at: paid ? placed_at : nil,
-      payment_method: paid ? "cash" : nil
+      payment_method: paid ? "現金" : nil # 名前スナップショット（ADR-0014）
     )
     lines = items || [ { name: item_name, quantity: quantity, unit_price: total } ]
     lines.each do |line|

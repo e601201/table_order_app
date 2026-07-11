@@ -33,11 +33,6 @@ function MetaRow({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-const paymentMethodLabel: Record<string, string> = {
-  cash: '現金',
-  credit_card: 'クレジットカード',
-}
-
 export default function OrderDetail({ order }: OrderDetailProps) {
   const k = kitchenStatusMeta[order.status]
   const p = paymentStatusMeta[order.payment_status]
@@ -156,8 +151,9 @@ export default function OrderDetail({ order }: OrderDetailProps) {
             <MetaRow label="種別">{orderTypeLabel}</MetaRow>
             <MetaRow label="受注時刻">{formatTimeJST(order.placed_at)}</MetaRow>
             <MetaRow label="点数">{order.item_count} 点</MetaRow>
+            {/* スタッフ画面の正準名は「決済方法」（CONTEXT.md）。値は会計時の名前スナップショット（ADR-0014）。 */}
             {order.payment_method && (
-              <MetaRow label="支払い方法">{paymentMethodLabel[order.payment_method] ?? order.payment_method}</MetaRow>
+              <MetaRow label="決済方法">{order.payment_method}</MetaRow>
             )}
             {order.paid_at && <MetaRow label="会計時刻">{formatTimeJST(order.paid_at)}</MetaRow>}
             {/* 打ち切り理由（閲覧専用の表示のみ。ADR-0010） */}

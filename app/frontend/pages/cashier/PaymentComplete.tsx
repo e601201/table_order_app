@@ -32,12 +32,6 @@ function formatPaidAt(iso: string | null): string {
   return iso ? formatDateTimeJST(iso) : '—'
 }
 
-function paymentMethodLabel(method: string | null): string {
-  if (method === 'credit_card') return 'クレジットカード'
-  if (method === 'cash') return '現金'
-  return '—'
-}
-
 // --- メインコンポーネント ---
 
 export default function PaymentComplete({ payment }: { payment: CashierOrder }) {
@@ -200,7 +194,8 @@ export default function PaymentComplete({ payment }: { payment: CashierOrder }) 
                 label={payment.order_type === 'takeout' ? '注文タイプ' : 'テーブル'}
                 value={payment.order_type === 'takeout' ? 'テイクアウト' : `テーブル ${payment.table_number}`}
               />
-              <DetailRow label="お支払い方法" value={paymentMethodLabel(payment.payment_method)} />
+              {/* 会計時にスナップショットされた決済方法の名前をそのまま表示（ADR-0014） */}
+              <DetailRow label="お支払い方法" value={payment.payment_method ?? '—'} />
               <DetailRow label="日時" value={formatPaidAt(payment.paid_at)} />
               <div
                 className="flex items-center justify-between"

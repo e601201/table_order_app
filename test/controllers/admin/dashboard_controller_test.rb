@@ -235,7 +235,7 @@ class Admin::DashboardControllerTest < ActionDispatch::IntegrationTest
       total: total,
       placed_at: placed_at,
       paid_at: paid ? placed_at : nil,
-      payment_method: paid ? "cash" : nil
+      payment_method: paid ? "現金" : nil # 名前スナップショット（ADR-0014）
     )
     lines = items || [ { name: item_name, quantity: quantity, unit_price: total } ]
     lines.each do |line|
