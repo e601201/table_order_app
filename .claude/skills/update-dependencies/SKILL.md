@@ -1,6 +1,6 @@
 ---
 name: update-dependencies
-description: Update Ruby gems and npm packages to their latest versions for the Maebashi table-order app. Use whenever the user says "依存関係を更新して", "依存関係をアップデート", asks to run bundle update / ncu, or asks to update gems or npm packages. Runs bundle update and npx npm-check-updates -u, validates with rubocop / brakeman / rails test / npm run check, rolls back on failure, and creates two separate commits matching the project convention (gem パッケージをアップデート / npm パッケージをアップデート).
+description: Update Ruby gems and npm packages to their latest versions for the Maebashi table-order app. Use whenever the user says "依存関係を更新して", "依存関係をアップデート", asks to run bundle update / ncu, or asks to update gems or npm packages. Runs bundle update --all and npx npm-check-updates -u, validates with rubocop / brakeman / rails test / npm run check, rolls back on failure, and creates two separate commits matching the project convention (gem パッケージをアップデート / npm パッケージをアップデート).
 ---
 
 # 依存関係更新スキル
@@ -32,8 +32,10 @@ cp Gemfile.lock /tmp/Gemfile.lock.before
 ### 1.2 bundle update を実行
 
 ```bash
-bundle update
+bundle update --all
 ```
+
+`--all` is required: without it Bundler emits a deprecation warning, and Bundler 3 will refuse to update everything unless the flag is passed.
 
 If `Gemfile.lock` is unchanged after this (compare with `/tmp/Gemfile.lock.before`), nothing was outdated — skip the rest of step 1 and move to step 2. Tell the user "gem は最新でした".
 
@@ -156,4 +158,4 @@ Do **not** push. The user reviews the diffs locally and pushes themselves — th
 
 **ロールバックは `git checkout --` で行う。** Never `git reset --hard` or `git stash drop` — those can wipe unrelated state. The precondition check at the top guarantees only the lockfiles / package.json are dirty, so a targeted checkout is sufficient and safe.
 
-**`bundle install` を `bundle update` の代わりに使わない。** `bundle install` only resolves missing gems against the existing lockfile; it does not bump versions. The user's intent ("依存関係を更新して") requires `bundle update`.
+**`bundle install` を `bundle update --all` の代わりに使わない。** `bundle install` only resolves missing gems against the existing lockfile; it does not bump versions. The user's intent ("依存関係を更新して") requires `bundle update --all`.
