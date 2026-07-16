@@ -61,12 +61,14 @@ Then report to the user: which validation failed, the relevant tail of its outpu
 
 ### 1.5 成功時のコミット
 
-Build the commit body from the lockfile diff. Each line in `Gemfile.lock` like `    gemname (1.2.3)` represents a resolved version; pair the `-` and `+` lines:
+Build the commit body from the lockfile diff. Each line in `Gemfile.lock` like `    gemname (1.2.3)` represents a resolved version; pair the `<` and `>` lines:
 
 ```bash
 diff /tmp/Gemfile.lock.before Gemfile.lock \
-  | awk '/^[<>] {4}[a-z0-9_-]+ \(/ { gsub(/[()]/, ""); print $1, $2, $3 }'
+  | awk '/^[<>] {5}[a-z0-9_-]+ \(/ { gsub(/[()]/, ""); print $1, $2, $3 }'
 ```
+
+The space count is exactly 5 — `diff`'s own separator space, plus the 4-space indent that marks a resolved version under `GEM specs`. That exactness is the filter: checksum lines (2-space indent) and dependency constraint lines (6-space indent) name the same gems, so loosening this to ` +` yields duplicates and bogus versions like `loofah ~>`. If this ever prints nothing, suspect the pattern before concluding no gems changed — a mismatch here exits 0 silently, looking exactly like "nothing to update".
 
 Format each entry as `- gemname OLD → NEW` (full-width arrow `→`, matching the existing commits). Skip dependencies whose only change is a checksum or platform line.
 
