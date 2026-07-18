@@ -4,6 +4,12 @@ require "rails/test_help"
 require "inertia_rails/minitest"
 require "minitest/mock"
 
+# Vite のテストアセットを親プロセスで先にビルドする。
+# autoBuild に任せると fork 後の並列ワーカーが各自 vite build を起動し、
+# 書きかけの manifest.json を別ワーカーが読んで落ちる（プロセス間ロックは無い）。
+# ビルド済みなら digest 照合だけで即座にスキップされるので warm 実行のコストはほぼゼロ。
+ViteRuby.commands.build || abort("Vite のテストアセットのビルドに失敗しました")
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
