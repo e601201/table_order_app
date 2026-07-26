@@ -30,6 +30,9 @@
 
 /public/assets
 
+# bundler の vendor パス指定でのインストール先（CI の setup-ruby キャッシュが作る）
+/vendor/bundle
+
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
