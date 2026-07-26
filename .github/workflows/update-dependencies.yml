@@ -1,0 +1,105 @@
+name: Update dependencies
+
+# `.claude/skills/update-dependencies/SKILL.md` の手順を Claude Code に実行させ、
+# 検証を通った更新だけを PR にする。SKILL.md は対話実行を前提にしているため、
+# コミット方法と push の扱いだけ下の prompt で読み替えている。
+on:
+  schedule:
+    - cron: '0 1 * * 1'   # 毎週月曜 10:00 JST（GitHub の cron は UTC のため 01:00 を指定）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# 手動実行とスケジュールが重なっても直列化する（実行中のものは中断しない）
+concurrency:
+  group: update-dependencies
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    # SKILL.md の検証ステップ（bin/rails test）が走るので CI の test ジョブと同じ環境を用意する
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # shallow clone からの push と origin/main..HEAD の差分計算のため全履歴を取る
+          fetch-depth: 0
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build frontend assets (test)
+        run: bin/vite build --mode test
+
+      - name: Prepare test database
+        run: bin/rails db:test:prepare
+
+      - name: Create working branch
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "deps/$(date -u +%Y%m%d-%H%M)"
+
+      - name: Run update-dependencies skill
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --max-turns 60
+            --model claude-sonnet-5
+            --allowedTools "Bash,Read,Write,Edit,Glob,Grep,Skill"
+          prompt: |
+            `.claude/skills/update-dependencies/SKILL.md` の手順に従って依存関係を更新してください。
+            ただし GitHub Actions 上での実行なので、以下の点だけ読み替えてください。
+
+            - コミット作成は `serial-commit` スキルに委ねず、`git commit -m` で直接行う
+              （author date の調整は不要。コミットメッセージ本文の形式は SKILL.md のまま、
+              gem / npm で2コミットに分ける規約もそのまま守る）
+            - `bundle install` / `npm ci` / DB 準備 / アセットビルドは実行済みなので再実行しない
+            - push と PR 作成はワークフロー側で行うので、あなたは push しないこと
+            - 検証に失敗した場合は SKILL.md の通りロールバックし、失敗内容をログに明記する
+
+      - name: Push branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "$(git rev-list --count origin/main..HEAD)" -eq 0 ]; then
+            echo "更新なし — PR は作成しません"
+            exit 0
+          fi
+          git push -u origin HEAD
+          gh pr create --base main \
+            --title "依存関係を更新" \
+            --body "$(git log --format='- %s' origin/main..HEAD)"
