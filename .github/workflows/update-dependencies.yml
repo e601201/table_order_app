@@ -56,7 +56,10 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          # ci.yml の 20 ではなく開発環境と同じ 24 を使う。
+          # このジョブは npm install で package-lock.json を書き換えるため、
+          # 同梱 npm のバージョンがずれると libc / name フィールドが毎回消えて差分が汚れる。
+          node-version: "24"
           cache: npm
 
       - name: Install JS dependencies
@@ -92,6 +95,17 @@ jobs:
             - `bundle install` / `npm ci` / DB 準備 / アセットビルドは実行済みなので再実行しない
             - push と PR 作成はワークフロー側で行うので、あなたは push しないこと
             - 検証に失敗した場合は SKILL.md の通りロールバックし、失敗内容をログに明記する
+            - コミットしなかった変更（更新無しと判断した lockfile など）は `git checkout --` で
+              元に戻し、作業ツリーを clean な状態にして終えること
+
+      # コミットされずに残った変更は PR に載らないまま捨てられるので、握りつぶさず記録する
+      - name: Check working tree is clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::warning::コミットされていない変更が残っています（破棄します）"
+            git status --porcelain
+            git checkout -- .
+          fi
 
       - name: Push branch and open PR
         env:
