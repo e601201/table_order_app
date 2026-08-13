@@ -22,7 +22,11 @@ servers:
 #
 proxy:
   ssl: true
-  host: vt-daichi.org
+  # 列挙した全ホストで Let's Encrypt 証明書を取得する。DNS が 153.120.44.106 を
+  # 向いていないホストを足すと取得に失敗するので、レコード作成後に追加すること。
+  hosts:
+    - table-order.n-daichi.dev
+    - vt-daichi.org
 
 # Where you keep your container images.
 registry:
