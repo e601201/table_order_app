@@ -4,8 +4,9 @@ name: Update dependencies
 # 検証を通った更新だけを PR にする。SKILL.md は対話実行を前提にしているため、
 # コミット方法と push の扱いだけ下の prompt で読み替えている。
 on:
-  schedule:
-    - cron: '0 1 * * 1'   # 毎週月曜 10:00 JST（GitHub の cron は UTC のため 01:00 を指定）
+  # 定期実行は停止した。依存更新は手元で `/update-dependencies` を回す運用に一本化する
+  # （bot の PR と手元の更新が重複し、片方が無駄になるため）。
+  # ワークフロー自体は残してあるので、必要なときは Actions タブから手動実行できる。
   workflow_dispatch:
 
 permissions:
