@@ -4,7 +4,6 @@ on:
   pull_request:
   push:
     branches: [ main ]
-  workflow_dispatch:   # Actions タブから手動デプロイも可能にする
 
 jobs:
   scan_ruby:
@@ -122,66 +121,3 @@ jobs:
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
         run: bin/rails db:test:prepare test
-
-  # main への push（＝ PR マージ）で、全チェック通過後に Kamal で本番デプロイする。
-  # 必要な GitHub Secrets:
-  #   RAILS_MASTER_KEY … config/master.key の中身（.kamal/secrets が credentials を復号するのに使う）
-  #   SSH_PRIVATE_KEY  … デプロイ先サーバ（root@153.120.44.106）の SSH 秘密鍵
-  deploy:
-    needs: [ scan_ruby, lint, js_test, test ]
-    # PR では走らせず、main への push と手動実行（workflow_dispatch）時のみデプロイ
-    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-    runs-on: ubuntu-latest
-
-    # 同時に複数デプロイが走らないよう直列化する（実行中のデプロイは中断しない）
-    concurrency:
-      group: kamal-deploy-production
-      cancel-in-progress: false
-
-    env:
-      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-
-    steps:
-      - name: Install system packages
-        # .kamal/secrets の `rails credentials:fetch` は Rails を起動してシークレットを取り出すため、
-        # ruby-vips（libvips）/ pg（libpq）のネイティブ依存が必要。これが無いと起動に失敗し、
-        # KAMAL_REGISTRY_PASSWORD などが空になって docker login が落ちる。
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
-
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Restore Rails master key
-        # .kamal/secrets が config/master.key と `rails credentials:fetch` を参照するため復元する。
-        # （RAILS_MASTER_KEY / POSTGRES_PASSWORD / LINE_* / KAMAL_REGISTRY_PASSWORD はすべて credentials から解決される）
-        run: |
-          echo "$RAILS_MASTER_KEY" > config/master.key
-          chmod 600 config/master.key
-
-      - name: Set up SSH key
-        # config/deploy.yml の ssh.keys と同じパスに秘密鍵を配置する
-        run: |
-          mkdir -p ~/.ssh/sakura_vps
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/sakura_vps/sakura_vps
-          chmod 600 ~/.ssh/sakura_vps/sakura_vps
-
-      - name: Add known host key
-        # 本番サーバの既知ホスト鍵を平文で固定登録する。
-        # ssh-keyscan に頼ると net-ssh（Kamal/SSHKit）がホスト鍵を照合できず HostKeyMismatch になるため、
-        # 検証済みの正しい公開鍵を直接記載する（公開鍵なので秘密情報ではない）。
-        run: |
-          mkdir -p ~/.ssh
-          echo '153.120.44.106 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINQY7Kl5TkoMh71N6ZZhKKXJJtmvfLnqjjQwII+YfJJc' >> ~/.ssh/known_hosts
-          echo '153.120.44.106 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJUUFYeEtCcVIQylquPIQWcGbkdM5N+U2eFET1Pw0n+hgPbCxakTNnHHhJxh+/I2JT17ms9AwaP/ESOZ+pGZP0I=' >> ~/.ssh/known_hosts
-          echo '153.120.44.106 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCl5wiaIRRY2WM4cMmuHGh1KXwIY08HC0fxgMRjF+fBdmsYEfN4bxXLUz06wAupSgyDvyZKX/1CQkGvwDJmoYkFPDpEuwjalv2hsrfECKZEMP/zxh4eDc222Y93gF47m9iy+riS9rm2XPSl16nBlC+QBPSzGJd5hGzYaVYVvGCb8Izc/HW5i7/TlwPFbbe2W0OIf/zERRR4j+wKeoA8/sVecCdr81gSp0wOwXNxtHuATy64rmWeaPUTrpUzBF4tIn5n4JaHWHPpdFIi9nN/xSdwYOkmAFcPjjXBsBcSFM4WyTuqS21PMU/tCT0vX+ZtgVMyuUZd+hi+lODdGIXWSs7r0qG1MGxiK4VbXOkJndo5Dk2XCjCbPoXf18dn5SVLk3CafNuRFEOmDql9mT73hD5NZd/nfMHrOG//Gy6TpxoohocfIfSdE33dzlWaZAtTEfpuRoi9mory9m6GiDdm0WM+/GbTowZQJyzokhDc9eKpYMHztGfAV8+8Ik+fHJFeJNk=' >> ~/.ssh/known_hosts
-
-      - name: Kamal deploy
-        run: bin/kamal deploy
