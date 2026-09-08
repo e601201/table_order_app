@@ -411,6 +411,7 @@ DEPENDENCIES
   image_processing (~> 2.0)
   inertia_rails (~> 3.19)
   jbuilder
+  json (< 3)
   kamal
   minitest-mock
   pg (~> 1.1)

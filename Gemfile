@@ -2,6 +2,10 @@ source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.3"
+# json 3.0 で JSON.parse のオプションがキーワード引数専用になり、Hash を位置引数で渡す
+# ActiveSupport::JSON.decode（activesupport 8.1.3.1）が壊れるため 2.x に固定する。
+# json 3 対応の Rails がリリースされたら外す。
+gem "json", "< 3"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
