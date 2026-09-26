@@ -2,6 +2,10 @@
 
 This file provides guidance to AI coding agents (Claude Code, Codex, etc.) when working with code in this repository.
 
+## 言語
+
+ユーザーとの対話は基本的に日本語で行う。コード識別子や技術用語は原語のままでよい。
+
 ## プロジェクト概要
 
 Table ordering app (POC) for restaurants — mobile-first interface for tabletop ordering. Japanese-language commit messages are the convention.
