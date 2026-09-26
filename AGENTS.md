@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Codex when working with code in this repository.
+This file provides guidance to AI coding agents (Claude Code, Codex, etc.) when working with code in this repository.
 
 ## プロジェクト概要
 
@@ -8,10 +8,10 @@ Table ordering app (POC) for restaurants — mobile-first interface for tabletop
 
 ## 技術スタック
 
-- **Backend**: Rails 8.1.3 / Ruby 4.0.4 / PostgreSQL
+- **Backend**: Rails 8.1.4 / Ruby 4.0.4 / PostgreSQL
 - **Frontend**: React 19 + TypeScript + Inertia.js (server-driven SPA)
 - **Styling**: Tailwind CSS 4.3 via Vite plugin
-- **Build**: Vite 8.0 with vite-plugin-ruby
+- **Build**: Vite 8.3.1 with vite-plugin-ruby
 - **Testing**: Minitest（Rails、`bin/rails test`）＋ Vitest（フロントの純粋ロジックを単体テスト、`app/frontend/**/*.test.ts`、`npm test`）
 - **Icons**: lucide-react
 - **Auth**: `has_secure_password`（Staffアカウント、bcrypt）
