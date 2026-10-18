@@ -1,6 +1,6 @@
 ---
 name: update-dependencies
-description: Update Ruby gems and npm packages to their latest versions for the Maebashi table-order app. Use whenever the user says "依存関係を更新して", "依存関係をアップデート", asks to run bundle update / ncu, or asks to update gems or npm packages. Runs bundle update --all and npx npm-check-updates -u, validates with rubocop / brakeman / rails test / npm run check, rolls back on failure, and creates two separate commits matching the project convention (gem パッケージをアップデート / npm パッケージをアップデート).
+description: Update Ruby gems and npm packages to their latest versions for the Maebashi table-order app. Use whenever the user says "依存関係を更新して", "依存関係をアップデート", asks to run bundle update / ncu, or asks to update gems or npm packages. Runs bundle update --all and npx npm-check-updates -u, validates with rubocop / brakeman / rails test / npm run check / npm test, rolls back on failure, and creates two separate commits matching the project convention (gem パッケージをアップデート / npm パッケージをアップデート).
 ---
 
 # 依存関係更新スキル
@@ -108,11 +108,16 @@ npm install
 
 ### 2.3 検証
 
-```bash
-npm run check
-```
+Run the checks in this order — the type check is the cheaper and more likely failure:
 
-This runs the TypeScript type check (`tsc` for both app and node configs). A non-zero exit means a major version bump introduced an incompatible type — that's the most common failure mode here, especially for `@types/react`, `typescript`, or `vite`.
+1. `npm run check`
+2. `npm test`
+
+`npm run check` runs the TypeScript type check (`tsc` for both app and node configs). A non-zero exit means a major version bump introduced an incompatible type — that's the most common failure mode here, especially for `@types/react`, `typescript`, or `vite`.
+
+`npm test` runs the Vitest unit tests (`app/frontend/**/*.test.ts`) once and exits. It catches runtime behavior changes that type-check alone misses — and since `vitest` itself is a dependency being bumped, it also confirms the new test runner still works.
+
+Any non-zero exit is a failure. Capture the failing command's output for the report.
 
 ### 2.4 失敗時のロールバック
 
