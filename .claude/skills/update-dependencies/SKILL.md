@@ -37,15 +37,31 @@ bundle update --all
 
 `--all` is required: without it Bundler emits a deprecation warning, and Bundler 3 will refuse to update everything unless the flag is passed.
 
+続けて、`CHECKSUMS` の空エントリを埋める:
+
+```bash
+bundle lock --add-checksums
+```
+
+`bundle update` はローカルにインストールした gem（このマシンのプラットフォーム版）の sha256 しか書かない。`Gemfile.lock` に載っている他プラットフォーム版（`nokogiri (X.Y.Z-x86_64-linux-gnu)` など）や新しく追加されたプラットフォーム行は、`CHECKSUMS` にバージョンだけで sha256 が空のまま残る。CI は frozen モードで `bundle install` するため、`Your lockfile has an empty CHECKSUMS entry for "nokogiri", but can't be updated because frozen mode is set` で失敗する（2026-11 に実際に CI を落とした）。ローカルの検証はすべて通ってしまうので、このステップを飛ばさないこと。
+
 If `Gemfile.lock` is unchanged after this (compare with `/tmp/Gemfile.lock.before`), nothing was outdated — skip the rest of step 1 and move to step 2. Tell the user "gem は最新でした".
 
 ### 1.3 検証
 
 Run the checks in this order — fail fast on cheap checks before paying for the test suite:
 
-1. `bin/rubocop`
-2. `bin/brakeman -q --no-pager`
-3. `bin/rails test`
+1. 空のチェックサムが無いこと、frozen モードで install できること（CI の `Set up Ruby` と同じ条件）:
+
+   ```bash
+   ! sed -n '/^CHECKSUMS/,/^$/p' Gemfile.lock | grep -vE '^CHECKSUMS$|^$|sha256='
+   BUNDLE_FROZEN=true bundle install
+   ```
+
+   1 行目は sha256 の無いエントリを表示し、あれば失敗（非ゼロ）になる。
+2. `bin/rubocop`
+3. `bin/brakeman -q --no-pager`
+4. `bin/rails test`
 
 Any non-zero exit is a failure. Capture the failing command's output for the report.
 
