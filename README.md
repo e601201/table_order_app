@@ -102,7 +102,7 @@ stateDiagram-v2
 
 ## セットアップ
 
-前提: Ruby 4.0.4（`.ruby-version`）・Node.js 20 以上・PostgreSQL
+前提: Ruby 4.0.10（`.ruby-version`）・Node.js 20 以上・PostgreSQL
 
 ```bash
 git clone git@github.com:e601201/table_order_app.git
